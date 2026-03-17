@@ -46,6 +46,31 @@ if ! ping -c1 -W3 archlinux.org >/dev/null 2>&1; then
   die "Internet is required for package repair."
 fi
 
+debug_startup() {
+  info "Startup diagnostics"
+  echo "  - User: $(id -un) (uid=$(id -u))"
+  echo "  - Shell: ${SHELL:-unknown}"
+  echo "  - Prompt sample: ${PS1:-unset}"
+  echo "  - TTY: $(tty 2>/dev/null || echo unknown)"
+  echo "  - Date/time: $(date -Is 2>/dev/null || date)"
+  echo "  - Root part expected: ${ROOT_PART}"
+  echo "  - EFI part expected: ${EFI_PART}"
+
+  if [[ -e /var/lib/pacman/db.lck ]]; then
+    warn "Live USB pacman lock exists: /var/lib/pacman/db.lck"
+    pgrep -a pacman 2>/dev/null || true
+    pgrep -a makepkg 2>/dev/null || true
+    pgrep -a yay 2>/dev/null || true
+  fi
+
+  echo "  - Link check:"
+  ip -brief link 2>/dev/null || true
+  echo "  - Resolver:"
+  sed -n '1,5p' /etc/resolv.conf 2>/dev/null || true
+  echo "  - Mirrorlist (first 5 active):"
+  grep -E '^Server' /etc/pacman.d/mirrorlist 2>/dev/null | head -5 || true
+}
+
 cleanup_mounts() {
   swapoff -a 2>/dev/null || true
   umount -R /mnt 2>/dev/null || true
@@ -80,6 +105,12 @@ mount_target() {
     cp -f /etc/resolv.conf /mnt/etc/resolv.conf || true
   fi
 
+  # If a stale lock exists in the installed system, clear it before chroot pacman calls.
+  if [[ -e /mnt/var/lib/pacman/db.lck ]]; then
+    warn "Found stale pacman lock in target system; removing /mnt/var/lib/pacman/db.lck"
+    rm -f /mnt/var/lib/pacman/db.lck
+  fi
+
   ok "Mounted ${MAPPER_PATH} -> /mnt and ${EFI_PART} -> /mnt/boot"
 }
 
@@ -99,6 +130,9 @@ ENFORCE_ZEN_ONLY="${ENFORCE_ZEN_ONLY:-true}"
 
     while [[ -e "$lock_file" && $waited -lt 90 ]]; do
       log "Pacman database is locked, waiting... (${waited}s)"
+      pgrep -a pacman 2>/dev/null || true
+      pgrep -a makepkg 2>/dev/null || true
+      pgrep -a yay 2>/dev/null || true
       sleep 2
       waited=$((waited + 2))
     done
@@ -254,6 +288,7 @@ finalize() {
 }
 
 cleanup_mounts
+debug_startup
 open_luks
 mount_target
 chroot_repair
