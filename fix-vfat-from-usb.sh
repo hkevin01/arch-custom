@@ -17,16 +17,47 @@ TARGET_DISK="${TARGET_DISK:-/dev/mmcblk0}"
 EFI_PART="${EFI_PART:-${TARGET_DISK}p1}"
 ROOT_PART="${ROOT_PART:-${TARGET_DISK}p2}"
 CRYPT_NAME="${CRYPT_NAME:-cryptroot}"
+PASS_ATTEMPTS="${PASS_ATTEMPTS:-3}"
 
 if [[ "${EUID}" -ne 0 ]]; then
   die "Run as root from Arch USB."
 fi
 
 [[ -b "$EFI_PART" ]] || die "EFI partition not found: $EFI_PART"
-[[ -b "$ROOT_PART" ]] || die "Root partition not found: $ROOT_PART"
+
+detect_luks_partition() {
+  if [[ -b "$ROOT_PART" ]] && blkid "$ROOT_PART" 2>/dev/null | grep -q 'TYPE="crypto_LUKS"'; then
+    echo "$ROOT_PART"
+    return 0
+  fi
+
+  local detected
+  detected="$(lsblk -pnro NAME,FSTYPE | awk '$2=="crypto_LUKS"{print $1; exit}')"
+  [[ -n "$detected" ]] || return 1
+  echo "$detected"
+}
+
+open_luks_with_retries() {
+  local part="$1"
+  local i=1
+  while [[ $i -le $PASS_ATTEMPTS ]]; do
+    info "Opening encrypted root ($part), attempt $i/$PASS_ATTEMPTS"
+    if cryptsetup open "$part" "$CRYPT_NAME"; then
+      return 0
+    fi
+    warn "No key available with this passphrase for $part"
+    i=$((i + 1))
+  done
+  return 1
+}
+
+ROOT_PART="$(detect_luks_partition || true)"
+[[ -n "$ROOT_PART" ]] || die "Could not find a LUKS root partition. Run: lsblk -f"
+
+info "Using LUKS root partition: $ROOT_PART"
 
 info "Opening encrypted root"
-cryptsetup open "$ROOT_PART" "$CRYPT_NAME"
+open_luks_with_retries "$ROOT_PART" || die "Unable to unlock $ROOT_PART after $PASS_ATTEMPTS attempts."
 
 info "Mounting target"
 mount /dev/mapper/$CRYPT_NAME /mnt
