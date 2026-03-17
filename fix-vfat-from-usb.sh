@@ -40,11 +40,23 @@ detect_luks_partition() {
 open_luks_with_retries() {
   local part="$1"
   local i=1
+  local passphrase
   while [[ $i -le $PASS_ATTEMPTS ]]; do
     info "Opening encrypted root ($part), attempt $i/$PASS_ATTEMPTS"
-    if cryptsetup open "$part" "$CRYPT_NAME"; then
+
+    # Running via curl|bash can make stdin non-interactive, so read from /dev/tty.
+    if [[ -r /dev/tty ]]; then
+      read -r -s -p "Enter LUKS passphrase for $part: " passphrase < /dev/tty
+      echo "" > /dev/tty
+      if printf '%s' "$passphrase" | cryptsetup open "$part" "$CRYPT_NAME" --key-file -; then
+        unset passphrase
+        return 0
+      fi
+    elif cryptsetup open "$part" "$CRYPT_NAME"; then
       return 0
     fi
+
+    unset passphrase
     warn "No key available with this passphrase for $part"
     i=$((i + 1))
   done
