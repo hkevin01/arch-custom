@@ -250,7 +250,7 @@ echo -e "  ${CYAN}Timezone:${NC}   $TIMEZONE"
 echo -e "  ${CYAN}Locale:${NC}     $LOCALE"
 echo -e "  ${CYAN}Default Passwords:${NC} user/root/luks = password"
 echo -e "  ${CYAN}Privacy Stack:${NC} Brave + AdGuard DNS + Tracking Protection"
-echo -e "  ${CYAN}Extras:${NC}     firefox brave git vim htop neofetch wget curl p7zip guvcview obs-studio"
+echo -e "  ${CYAN}Extras:${NC}     brave git vim htop fastfetch wget curl p7zip guvcview obs-studio"
 echo ""
 echo -e "  ${RED}${BOLD}ALL DATA ON $TARGET_DISK WILL BE DESTROYED PERMANENTLY${NC}"
 echo ""
@@ -328,7 +328,6 @@ pacstrap -K /mnt \
     cryptsetup e2fsprogs dosfstools \
     efibootmgr \
     pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber \
-    firefox \
     htop fastfetch \
     p7zip unzip zip \
     guvcview v4l-utils obs-studio
@@ -514,8 +513,7 @@ echo "   - LUKS2 full disk encryption"
 echo "   - systemd-boot"
 echo "   - PipeWire audio"
 echo "   - NetworkManager"
-echo "   - Firefox installed in base system"
-echo "   - Brave installed later from AUR via post-install script"
+echo "   - Brave installed from AUR via post-install script"
 echo "   - Webcam support (guvcview, obs-studio)"
 echo "   - Privacy stack ready (AdGuard DNS + uBlock + Ghostery)"
 echo ""
