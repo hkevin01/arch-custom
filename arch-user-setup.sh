@@ -67,6 +67,33 @@ install_vscode_official() {
   ok "Official VS Code setup complete"
 }
 
+fix_time_and_locale() {
+  local timezone_target="${TIMEZONE_TARGET:-America/Los_Angeles}"
+  local locale_target="${LOCALE_TARGET:-en_US.UTF-8}"
+
+  info "Fixing system time and locale"
+
+  if command -v timedatectl >/dev/null 2>&1; then
+    sudo timedatectl set-timezone "$timezone_target" || true
+    sudo timedatectl set-ntp true || true
+  fi
+
+  if [[ -f /etc/locale.gen ]]; then
+    if sudo grep -Eq "^#?${locale_target}[[:space:]]+UTF-8$" /etc/locale.gen; then
+      sudo sed -i "s/^#\(${locale_target}[[:space:]]\+UTF-8\)/\1/" /etc/locale.gen
+      sudo locale-gen || true
+    fi
+  fi
+
+  if command -v localectl >/dev/null 2>&1; then
+    sudo localectl set-locale "LANG=${locale_target}" || true
+  else
+    echo "LANG=${locale_target}" | sudo tee /etc/locale.conf >/dev/null
+  fi
+
+  ok "Time and locale settings applied (${timezone_target}, ${locale_target})"
+}
+
 setup_beastmode() {
   info "Syncing Beastmode agent/chatmode"
 
@@ -163,6 +190,7 @@ run_privacy_scripts() {
 echo -e "\n${BOLD}${CYAN}=== Arch User Setup (VS Code + Beastmode + Konsole + Brave) ===${NC}\n"
 
 setup_konsole_transparent
+fix_time_and_locale
 
 sudo pacman -S --noconfirm --needed git base-devel curl
 
