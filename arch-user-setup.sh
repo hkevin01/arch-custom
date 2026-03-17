@@ -162,6 +162,8 @@ run_privacy_scripts() {
 
 echo -e "\n${BOLD}${CYAN}=== Arch User Setup (VS Code + Beastmode + Konsole + Brave) ===${NC}\n"
 
+setup_konsole_transparent
+
 sudo pacman -S --noconfirm --needed git base-devel curl
 
 if [[ ! -d "${HOME}/Projects/arch-custom/.git" ]]; then
@@ -173,7 +175,6 @@ fi
 install_brave
 install_vscode_official
 setup_beastmode
-setup_konsole_transparent
 run_privacy_scripts
 
 echo -e "\n${GREEN}${BOLD}All requested user setup steps are complete.${NC}"
