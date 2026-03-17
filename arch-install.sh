@@ -32,22 +32,35 @@ info()    { echo -e "${CYAN}[>>] $1${NC}"; }
 step()    { echo -e "\n${BOLD}  STEP $1: $2${NC}"; }
 
 cleanup_previous_install_state() {
-    info "Cleaning up any previous failed install state..."
+    local needed_cleanup=0
+
+    info "Checking for previous failed install state..."
 
     if mount | grep -q ' on /mnt'; then
+        needed_cleanup=1
         warn "/mnt is mounted from a previous run; unmounting"
         umount -R /mnt 2>/dev/null || true
     fi
 
+    if swapon --noheadings 2>/dev/null | grep -q .; then
+        needed_cleanup=1
+        warn "Swap is active from a previous run; disabling it"
+    fi
     swapoff -a 2>/dev/null || true
 
     if [[ -e /dev/mapper/cryptroot ]]; then
+        needed_cleanup=1
         warn "Closing existing /dev/mapper/cryptroot from a previous run"
         cryptsetup close cryptroot 2>/dev/null || cryptsetup luksClose cryptroot 2>/dev/null || true
     fi
 
     udevadm settle 2>/dev/null || true
-    success "Previous install state cleaned up"
+
+    if [[ "$needed_cleanup" -eq 1 ]]; then
+        success "Previous install state cleaned up"
+    else
+        success "No previous install state needed cleanup"
+    fi
 }
 
 # Password input with validation function.
@@ -107,6 +120,9 @@ echo "      ARCH LINUX AUTO-INSTALLER (ENHANCED)"
 echo "      Zen Kernel  |  KDE Plasma 6  |  LUKS2 Encryption  |  Privacy Stack"
 echo -e "================================================================${NC}"
 echo ""
+
+header "STARTUP CLEANUP"
+cleanup_previous_install_state
 
 # --- PRE-CHECKS ---
 header "PRE-FLIGHT CHECKS"
@@ -238,8 +254,6 @@ read -p "  Type INSTALL to continue or anything else to abort: " GO
 
 # --- PARTITIONING ---
 header "PARTITIONING"
-
-cleanup_previous_install_state
 
 info "Wiping $TARGET_DISK..."
 sgdisk --zap-all "$TARGET_DISK" &>/dev/null
