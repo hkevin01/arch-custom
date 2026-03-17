@@ -6,7 +6,7 @@
 #
 =============================================================================
 # Usage (from Arch ISO terminal):
-#   curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/arch-install-enhanced.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/arch-install.sh | bash
 #
 # IMPROVEMENTS:
 #   - Better password entry with clear re-prompt
@@ -31,27 +31,40 @@ err()     { echo -e "${RED}[ERR] $1${NC}"; exit 1; }
 info()    { echo -e "${CYAN}[>>] $1${NC}"; }
 step()    { echo -e "\n${BOLD}  STEP $1: $2${NC}"; }
 
-# Password input with validation function
+# Password input with validation function.
+# Writes prompts directly to the terminal and stores the result in the named variable.
 prompt_password() {
-    local prompt_text="$1"
+    local __resultvar="$1"
+    local prompt_text="$2"
+    local pass1=""
+    local pass2=""
     local attempts=0
     local max_attempts=3
-    
+
     while true; do
-        read -s -p "  $prompt_text: " pass1; echo ""
-        read -s -p "  Confirm $prompt_text: " pass2; echo ""
-        
-        if [[ "$pass1" == "$pass2" ]]; then
-            echo "$pass1"
-            return 0
-        else
-            attempts=$((attempts + 1))
-            if [[ $attempts -ge $max_attempts ]]; then
-                err "Too many failed attempts ($max_attempts). Aborting."
-            fi
-            warn "Passwords don't match. Try again ($attempts/$max_attempts)"
-            echo ""
+        IFS= read -r -s -p "  $prompt_text: " pass1 < /dev/tty
+        printf '\n' > /dev/tty
+        IFS= read -r -s -p "  Confirm $prompt_text: " pass2 < /dev/tty
+        printf '\n' > /dev/tty
+
+        if [[ -z "$pass1" ]]; then
+            warn "Password cannot be empty" > /dev/tty
+            printf '\n' > /dev/tty
+            continue
         fi
+
+        if [[ "$pass1" == "$pass2" ]]; then
+            printf -v "$__resultvar" '%s' "$pass1"
+            return 0
+        fi
+
+        attempts=$((attempts + 1))
+        if [[ $attempts -ge $max_attempts ]]; then
+            err "Too many failed attempts ($max_attempts). Aborting."
+        fi
+
+        warn "Passwords don't match. Try again ($attempts/$max_attempts)" > /dev/tty
+        printf '\n' > /dev/tty
     done
 }
 
@@ -150,11 +163,11 @@ done
 
 echo ""
 info "User Password"
-USER_PASS=$(prompt_password "User password")
+prompt_password USER_PASS "User password"
 
 echo ""
 info "Disk Encryption Password - ${RED}You type this EVERY time you boot${NC}"
-LUKS_PASS=$(prompt_password "Encryption password")
+prompt_password LUKS_PASS "Encryption password"
 
 echo ""
 read -p "  Timezone [America/Los_Angeles]: " TIMEZONE
