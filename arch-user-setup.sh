@@ -68,7 +68,7 @@ install_vscode_official() {
 }
 
 fix_time_and_locale() {
-  local timezone_target="${TIMEZONE_TARGET:-America/Los_Angeles}"
+  local timezone_target="${TIMEZONE_TARGET:-America/New_York}"
   local locale_target="${LOCALE_TARGET:-en_US.UTF-8}"
 
   info "Fixing system time and locale"
