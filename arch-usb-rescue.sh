@@ -82,18 +82,51 @@ set -euo pipefail
 
 log() { echo "[chroot] $*"; }
 
+  wait_for_pacman_lock() {
+    local lock_file="/var/lib/pacman/db.lck"
+    local waited=0
+
+    while [[ -e "$lock_file" && $waited -lt 90 ]]; do
+      log "Pacman database is locked, waiting... (${waited}s)"
+      sleep 2
+      waited=$((waited + 2))
+    done
+
+    if [[ -e "$lock_file" ]]; then
+      log "Lock file still present after waiting; assuming stale lock and removing it"
+      rm -f "$lock_file"
+    fi
+  }
+
+  pacman_safe() {
+    wait_for_pacman_lock
+    if pacman "$@"; then
+      return 0
+    fi
+
+    if [[ -e /var/lib/pacman/db.lck ]]; then
+      log "Pacman failed and db.lck exists; removing stale lock and retrying once"
+      rm -f /var/lib/pacman/db.lck
+      wait_for_pacman_lock
+      pacman "$@"
+      return $?
+    fi
+
+    return 1
+  }
+
 log "Refreshing package database"
-pacman -Sy --noconfirm
+  pacman_safe -Sy --noconfirm
 
 log "Installing core repair and Wi-Fi packages"
-pacman -S --noconfirm --needed \
+  pacman_safe -S --noconfirm --needed \
   networkmanager iwd wpa_supplicant iw wireless_tools rfkill \
   linux-firmware linux-firmware-realtek \
   base-devel git dkms efibootmgr
 
 for k in linux linux-zen linux-lts; do
   if pacman -Q "$k" >/dev/null 2>&1; then
-    pacman -S --noconfirm --needed "${k}-headers"
+      pacman_safe -S --noconfirm --needed "${k}-headers"
   fi
 done
 
