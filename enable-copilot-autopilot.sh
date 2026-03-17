@@ -25,6 +25,40 @@ die() {
   exit 1
 }
 
+run_privileged() {
+  if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+    "$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  else
+    die "Need root privileges to install jq automatically. Install sudo or run as root."
+  fi
+}
+
+ensure_jq() {
+  if command -v jq >/dev/null 2>&1; then
+    return 0
+  fi
+
+  warn "jq is missing. Attempting to install it automatically."
+
+  if command -v pacman >/dev/null 2>&1; then
+    run_privileged pacman -Sy --noconfirm jq
+  elif command -v apt-get >/dev/null 2>&1; then
+    run_privileged apt-get update
+    run_privileged apt-get install -y jq
+  elif command -v dnf >/dev/null 2>&1; then
+    run_privileged dnf install -y jq
+  elif command -v zypper >/dev/null 2>&1; then
+    run_privileged zypper --non-interactive install jq
+  else
+    die "Unsupported package manager. Install jq manually and re-run this script."
+  fi
+
+  command -v jq >/dev/null 2>&1 || die "jq installation completed but jq is still not available in PATH."
+  ok "Installed jq"
+}
+
 SETTINGS_DIR="${HOME}/.config/Code/User"
 SETTINGS_FILE="${SETTINGS_DIR}/settings.json"
 BACKUP_DIR="${HOME}/.local/share/vscode-state-backups/manual"
@@ -32,9 +66,7 @@ BACKUP_FILE="${BACKUP_DIR}/settings.$(date +%Y%m%d-%H%M%S).json"
 
 mkdir -p "$SETTINGS_DIR" "$BACKUP_DIR"
 
-if ! command -v jq >/dev/null 2>&1; then
-  die "jq is required. Install it first: sudo pacman -S jq"
-fi
+ensure_jq
 
 if [[ -f "$SETTINGS_FILE" ]]; then
   cp "$SETTINGS_FILE" "$BACKUP_FILE"
