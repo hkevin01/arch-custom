@@ -225,6 +225,11 @@ TIMEZONE=${TIMEZONE:-America/Los_Angeles}
 
 read -p "  Locale [en_US.UTF-8]: " LOCALE
 LOCALE=${LOCALE:-en_US.UTF-8}
+LOCALE=${LOCALE// /}
+if [[ ! "$LOCALE" =~ ^[A-Za-z]{2}_[A-Za-z]{2}\.UTF-8$ ]]; then
+    warn "Invalid locale format '$LOCALE'. Falling back to en_US.UTF-8"
+    LOCALE="en_US.UTF-8"
+fi
 
 read -p "  Install Beast Mode agent? [Y/n]: " INSTALL_BEAST_MODE
 INSTALL_BEAST_MODE=${INSTALL_BEAST_MODE:-y}
@@ -346,7 +351,13 @@ ln -sf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
 hwclock --systohc
 
 echo "  >> Locale..."
-echo "${LOCALE} UTF-8" >> /etc/locale.gen
+if grep -Eq "^#?${LOCALE}[[:space:]]+UTF-8$" /etc/locale.gen; then
+    sed -i "s/^#\(${LOCALE}[[:space:]]\+UTF-8\)
+*/\1/" /etc/locale.gen
+else
+    echo "Locale ${LOCALE} is not available in /etc/locale.gen" >&2
+    exit 1
+fi
 locale-gen
 echo "LANG=${LOCALE}" > /etc/locale.conf
 
