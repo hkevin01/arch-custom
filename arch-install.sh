@@ -32,20 +32,33 @@ info()    { echo -e "${CYAN}[>>] $1${NC}"; }
 step()    { echo -e "\n${BOLD}  STEP $1: $2${NC}"; }
 
 # Password input with validation function.
-# Writes prompts directly to the terminal and stores the result in the named variable.
+# Defaults to visible input because some Arch ISO console/keyboard combinations
+# behave poorly with repeated hidden prompts.
 prompt_password() {
     local __resultvar="$1"
     local prompt_text="$2"
     local pass1=""
     local pass2=""
+    local hidden_choice="n"
     local attempts=0
     local max_attempts=3
 
+    IFS= read -r -p "  Hide $prompt_text while typing? [y/N]: " hidden_choice < /dev/tty
+    hidden_choice=${hidden_choice,,}
+
     while true; do
-        IFS= read -r -s -p "  $prompt_text: " pass1 < /dev/tty
-        printf '\n' > /dev/tty
-        IFS= read -r -s -p "  Confirm $prompt_text: " pass2 < /dev/tty
-        printf '\n' > /dev/tty
+        if [[ "$hidden_choice" == "y" ]]; then
+            IFS= read -r -s -p "  $prompt_text: " pass1 < /dev/tty
+            printf '\n' > /dev/tty
+            IFS= read -r -s -p "  Confirm $prompt_text: " pass2 < /dev/tty
+            printf '\n' > /dev/tty
+        else
+            IFS= read -r -p "  $prompt_text: " pass1 < /dev/tty
+            IFS= read -r -p "  Confirm $prompt_text: " pass2 < /dev/tty
+        fi
+
+        pass1=${pass1%$'\r'}
+        pass2=${pass2%$'\r'}
 
         if [[ -z "$pass1" ]]; then
             warn "Password cannot be empty" > /dev/tty
@@ -163,10 +176,12 @@ done
 
 echo ""
 info "User Password"
+echo "  [>>] If hidden entry keeps failing, answer 'n' and type it visibly." 
 prompt_password USER_PASS "User password"
 
 echo ""
 info "Disk Encryption Password - ${RED}You type this EVERY time you boot${NC}"
+echo "  [>>] For reliability in the Arch ISO, visible entry is usually best here too."
 prompt_password LUKS_PASS "Encryption password"
 
 echo ""
