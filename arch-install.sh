@@ -365,7 +365,7 @@ echo "${HOSTNAME}" > /etc/hostname
 printf '127.0.0.1\tlocalhost\n::1\t\tlocalhost\n127.0.1.1\t${HOSTNAME}.localdomain ${HOSTNAME}\n' > /etc/hosts
 
 echo "  >> Configuring mkinitcpio for encryption..."
-sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard keymap consolefont block encrypt filesystems fsck)/' /etc/mkinitcpio.conf
+sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard keymap block encrypt filesystems fsck)/' /etc/mkinitcpio.conf
 mkinitcpio -P
 
 echo "  >> Installing KDE Plasma (patience required)..."

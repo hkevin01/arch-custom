@@ -56,7 +56,7 @@ echo "LANG=en_US.UTF-8" > /etc/locale.conf
 echo "${HOSTNAME_VALUE}" > /etc/hostname
 printf '127.0.0.1\tlocalhost\n::1\t\tlocalhost\n127.0.1.1\t${HOSTNAME_VALUE}.localdomain ${HOSTNAME_VALUE}\n' > /etc/hosts
 
-sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard keymap consolefont block encrypt filesystems fsck)/' /etc/mkinitcpio.conf
+sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard keymap block encrypt filesystems fsck)/' /etc/mkinitcpio.conf
 mkinitcpio -P
 
 pacman -S --noconfirm --needed plasma-meta kde-applications-meta sddm
