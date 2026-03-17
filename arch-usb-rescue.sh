@@ -274,7 +274,7 @@ if [[ "${EUID}" -eq 0 ]]; then
   echo "Run this as normal user, not root." >&2
   exit 1
 fi
-sudo pacman -S --noconfirm --needed dkms base-devel git linux-headers linux-zen-headers linux-lts-headers
+sudo pacman -S --noconfirm --needed dkms base-devel git linux-zen-headers
 if ! command -v yay >/dev/null 2>&1; then
   cd ~/Projects
   rm -rf yay
@@ -283,8 +283,8 @@ if ! command -v yay >/dev/null 2>&1; then
   makepkg -si --noconfirm
 fi
 yay -S --noconfirm rtl8821ce-dkms-git
-echo 'blacklist rtw88_8821ce' | sudo tee /etc/modprobe.d/blacklist-rtw88-8821ce.conf >/dev/null
 sudo mkinitcpio -P
+echo "If needed, you can manually blacklist rtw88_8821ce after testing stability."
 echo "Done. Reboot recommended."
 EOS
     chmod +x /usr/local/sbin/install-rtl8821ce-aur.sh
