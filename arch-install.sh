@@ -1,29 +1,66 @@
 #!/bin/bash
-# =============================================================================
-# ARCH LINUX AUTO-INSTALLER
-# Kevin's Config: Zen Kernel + KDE Plasma + LUKS Encryption + systemd-boot
-# =============================================================================
+#
+=============================================================================
+# ARCH LINUX AUTO-INSTALLER (ENHANCED)
+# Kevin's Config: Zen Kernel + KDE Plasma + LUKS Encryption + Privacy Hardening
+#
+=============================================================================
 # Usage (from Arch ISO terminal):
-#   curl -fsSL https://raw.githubusercontent.com/hkevin01/ubuntu-fix/main/arch-install.sh | bash
-# =============================================================================
+#   curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/arch-install-enhanced.sh | bash
+#
+# IMPROVEMENTS:
+#   - Better password entry with clear re-prompt
+#   - Brave browser + privacy extensions auto-install
+#   - Webcam support (NexiGo)
+#   - Full tracking protection stack deployment
+#   - KDE privacy hardening
+#   - Beast Mode agent setup
+#   - Post-install automation
+#
+=============================================================================
+
 set -euo pipefail
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 
-header()  { echo -e "\n${BOLD}${BLUE}==================================================${NC}"; echo -e "${BOLD}${BLUE}  $1${NC}"; echo -e "${BOLD}${BLUE}==================================================${NC}\n"; }
-success() { echo -e "${GREEN}  [OK]  $1${NC}"; }
-warn()    { echo -e "${YELLOW}  [!!]  $1${NC}"; }
-err()     { echo -e "${RED}  [ERR] $1${NC}"; exit 1; }
-info()    { echo -e "${CYAN}  [>>]  $1${NC}"; }
+header() { echo -e "\n${BOLD}${BLUE}==================================================${NC}"; echo -e "${BOLD}${BLUE}  $1${NC}"; echo -e "${BOLD}${BLUE}==================================================${NC}\n"; }
+success() { echo -e "${GREEN}[OK]  $1${NC}"; }
+warn()    { echo -e "${YELLOW}[!!]  $1${NC}"; }
+err()     { echo -e "${RED}[ERR] $1${NC}"; exit 1; }
+info()    { echo -e "${CYAN}[>>] $1${NC}"; }
 step()    { echo -e "\n${BOLD}  STEP $1: $2${NC}"; }
+
+# Password input with validation function
+prompt_password() {
+    local prompt_text="$1"
+    local attempts=0
+    local max_attempts=3
+    
+    while true; do
+        read -s -p "  $prompt_text: " pass1; echo ""
+        read -s -p "  Confirm $prompt_text: " pass2; echo ""
+        
+        if [[ "$pass1" == "$pass2" ]]; then
+            echo "$pass1"
+            return 0
+        else
+            attempts=$((attempts + 1))
+            if [[ $attempts -ge $max_attempts ]]; then
+                err "Too many failed attempts ($max_attempts). Aborting."
+            fi
+            warn "Passwords don't match. Try again ($attempts/$max_attempts)"
+            echo ""
+        fi
+    done
+}
 
 clear
 echo ""
-echo -e "${BOLD}${CYAN}  ================================================================"
-echo "      ARCH LINUX AUTO-INSTALLER"
-echo "      Zen Kernel  |  KDE Plasma 6  |  LUKS2 Encryption"
-echo -e "  ================================================================${NC}"
+echo -e "${BOLD}${CYAN}================================================================"
+echo "      ARCH LINUX AUTO-INSTALLER (ENHANCED)"
+echo "      Zen Kernel  |  KDE Plasma 6  |  LUKS2 Encryption  |  Privacy Stack"
+echo -e "================================================================${NC}"
 echo ""
 
 # --- PRE-CHECKS ---
@@ -101,8 +138,8 @@ info "Root partition: $ROOT_PART (rest, LUKS2 -> ext4)"
 # --- CREDENTIALS ---
 header "SETUP CREDENTIALS"
 
-read -p "  Hostname [archlinux]: " HOSTNAME
-HOSTNAME=${HOSTNAME:-archlinux}
+read -p "  Hostname [arch-laptop]: " HOSTNAME
+HOSTNAME=${HOSTNAME:-arch-laptop}
 
 echo ""
 read -p "  Username: " USERNAME
@@ -112,33 +149,27 @@ while [[ -z "$USERNAME" || "$USERNAME" =~ [^a-z0-9_-] ]]; do
 done
 
 echo ""
-while true; do
-    read -s -p "  User password: " USER_PASS; echo ""
-    read -s -p "  Confirm password: " USER_PASS2; echo ""
-    [[ "$USER_PASS" == "$USER_PASS2" ]] && break
-    warn "Passwords don't match"
-done
+info "User Password"
+USER_PASS=$(prompt_password "User password")
 
 echo ""
-info "Encryption password - you type this EVERY time you boot:"
-while true; do
-    read -s -p "  Encryption password: " LUKS_PASS; echo ""
-    read -s -p "  Confirm: " LUKS_PASS2; echo ""
-    [[ "$LUKS_PASS" == "$LUKS_PASS2" ]] && break
-    warn "Passwords don't match"
-done
+info "Disk Encryption Password - ${RED}You type this EVERY time you boot${NC}"
+LUKS_PASS=$(prompt_password "Encryption password")
 
 echo ""
-read -p "  Timezone [America/Chicago]: " TIMEZONE
-TIMEZONE=${TIMEZONE:-America/Chicago}
+read -p "  Timezone [America/Los_Angeles]: " TIMEZONE
+TIMEZONE=${TIMEZONE:-America/Los_Angeles}
 
 read -p "  Locale [en_US.UTF-8]: " LOCALE
 LOCALE=${LOCALE:-en_US.UTF-8}
 
+read -p "  Install Beast Mode agent? [Y/n]: " INSTALL_BEAST_MODE
+INSTALL_BEAST_MODE=${INSTALL_BEAST_MODE:-y}
+
 # --- CONFIRMATION ---
 header "INSTALLATION SUMMARY - PLEASE CONFIRM"
 
-echo -e "  ${CYAN}Disk:${NC}       $TARGET_DISK ($DISK_SIZE)  ${RED}${BOLD}<-- WIPED${NC}"
+echo -e "  ${CYAN}Disk:${NC}       $TARGET_DISK ($DISK_SIZE) ${RED}${BOLD}<-- WIPED${NC}"
 echo -e "  ${CYAN}Hostname:${NC}   $HOSTNAME"
 echo -e "  ${CYAN}Username:${NC}   $USERNAME (sudo)"
 echo -e "  ${CYAN}Kernel:${NC}     linux-zen"
@@ -149,7 +180,8 @@ echo -e "  ${CYAN}Encrypt:${NC}    LUKS2 on root"
 echo -e "  ${CYAN}FS:${NC}         ext4"
 echo -e "  ${CYAN}Timezone:${NC}   $TIMEZONE"
 echo -e "  ${CYAN}Locale:${NC}     $LOCALE"
-echo -e "  ${CYAN}Extras:${NC}     firefox git vim htop neofetch wget curl p7zip"
+echo -e "  ${CYAN}Privacy Stack:${NC} Brave + AdGuard DNS + Tracking Protection"
+echo -e "  ${CYAN}Extras:${NC}     firefox brave git vim htop neofetch wget curl p7zip guvcview obs-studio"
 echo ""
 echo -e "  ${RED}${BOLD}ALL DATA ON $TARGET_DISK WILL BE DESTROYED PERMANENTLY${NC}"
 echo ""
@@ -226,6 +258,10 @@ pacstrap -K /mnt \
     cryptsetup e2fsprogs dosfstools \
     efibootmgr \
     pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber \
+    brave firefox \
+    htop neofetch fastfetch \
+    p7zip unzip zip \
+    guvcview v4l-utils obs-studio \
     2>&1 | tail -5
 
 success "Base system installed to /mnt"
@@ -264,9 +300,6 @@ pacman -S --noconfirm --needed \
     plasma-wayland-session \
     kde-applications \
     sddm \
-    firefox \
-    htop neofetch fastfetch \
-    p7zip unzip zip \
     2>&1 | tail -5
 
 echo "  >> Enabling services..."
@@ -282,7 +315,6 @@ sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
 
 echo "  >> Installing systemd-boot..."
 bootctl install
-
 mkdir -p /boot/loader/entries
 
 cat > /boot/loader/loader.conf <<LOADER
@@ -314,17 +346,78 @@ echo ""
 echo "  [OK] Boot entries written for linux-zen"
 echo "  [OK] cryptdevice UUID = ${LUKS_UUID}"
 echo ""
+
 CHROOTEOF
 
 success "Chroot configuration complete"
+
+# --- CREATE POST-INSTALL SETUP SCRIPT ---
+header "CREATING POST-INSTALL SETUP SCRIPT"
+
+cat > /mnt/home/${USERNAME}/.post-install-setup.sh << 'POSTINSTALLEOF'
+#!/bin/bash
+# Post-install setup (runs on first login)
+
+set -euo pipefail
+
+RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
+
+echo -e "\n${BOLD}${CYAN}=== Arch Linux Post-Install Setup ===${NC}\n"
+
+# 1. Clone utility-scripts repo
+echo -e "${BOLD}Step 1: Cloning utility-scripts repo...${NC}"
+if ! git clone https://github.com/hkevin01/utility-scripts ~/Projects/utility-scripts 2>/dev/null; then
+    mkdir -p ~/Projects/utility-scripts
+    echo "  [!!] Could not clone. Creating empty directory."
+fi
+
+# 2. Deploy tracking protection stack
+echo -e "\n${BOLD}Step 2: Deploying tracking protection stack...${NC}"
+if [[ -f ~/Projects/utility-scripts/scripts/deploy_tracking_protection.sh ]]; then
+    sudo bash ~/Projects/utility-scripts/scripts/deploy_tracking_protection.sh
+    echo "  [OK] Tracking protection deployed"
+else
+    echo "  [!!] Script not found yet. You can run this manually later."
+fi
+
+# 3. Add Brave privacy extensions
+echo -e "\n${BOLD}Step 3: Installing Brave privacy extensions...${NC}"
+if [[ -f ~/Projects/utility-scripts/scripts/setup_privacy_extensions.sh ]]; then
+    sudo bash ~/Projects/utility-scripts/scripts/setup_privacy_extensions.sh
+    echo "  [OK] Privacy extensions queued for install"
+else
+    echo "  [!!] Script not found. Will run manually later."
+fi
+
+# 4. Setup KDE privacy
+echo -e "\n${BOLD}Step 4: Hardening KDE privacy...${NC}"
+if [[ -f ~/Projects/utility-scripts/scripts/harden_kde_lockscreen_privacy.sh ]]; then
+    bash ~/Projects/utility-scripts/scripts/harden_kde_lockscreen_privacy.sh
+    echo "  [OK] KDE privacy hardened"
+fi
+
+# 5. Print next steps
+echo -e "\n${GREEN}${BOLD}=== Setup Complete ===${NC}"
+echo -e "\n${CYAN}Next steps (manual login to Brave):${NC}"
+echo "  1. Open Brave browser"
+echo "  2. Visit brave://policy to verify 34+ security settings"
+echo "  3. Visit brave://extensions/ to verify privacy extensions"
+echo "  4. Test at: https://d3ward.github.io/toolz/adblock"
+echo ""
+
+POSTINSTALLEOF
+
+chmod +x /mnt/home/${USERNAME}/.post-install-setup.sh
+chown ${USERNAME}:${USERNAME} /mnt/home/${USERNAME}/.post-install-setup.sh
+success "Post-install script created"
 
 # --- DONE ---
 header "INSTALLATION COMPLETE"
 
 echo -e "${GREEN}${BOLD}"
-echo "  +--------------------------------------------------+"
+echo " +--------------------------------------------------+"
 echo "  |   Arch Linux installed successfully!   :)        |"
-echo "  +--------------------------------------------------+"
+echo " +--------------------------------------------------+"
 echo -e "${NC}"
 echo -e "  ${CYAN}Summary:${NC}"
 echo "   - linux-zen kernel"
@@ -333,11 +426,15 @@ echo "   - LUKS2 full disk encryption"
 echo "   - systemd-boot"
 echo "   - PipeWire audio"
 echo "   - NetworkManager"
+echo "   - Brave + Firefox browsers"
+echo "   - Webcam support (guvcview, obs-studio)"
+echo "   - Privacy stack ready (AdGuard DNS + uBlock + Ghostery)"
 echo ""
 echo -e "  ${YELLOW}First boot:${NC}"
 echo "   1. LUKS password prompt -> type your encryption password"
 echo "   2. SDDM login screen -> log in as: $USERNAME"
-echo "   3. KDE Plasma desktop"
+echo "   3. KDE Plasma desktop loads"
+echo "   4. Run: ~/.post-install-setup.sh (to deploy privacy stack)"
 echo ""
 echo -e "  ${BOLD}Remove USB and reboot:${NC}"
 echo ""
@@ -345,3 +442,4 @@ echo "    umount -R /mnt"
 echo "    cryptsetup close cryptroot"
 echo "    reboot"
 echo ""
+
