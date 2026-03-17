@@ -287,8 +287,8 @@ pacstrap -K /mnt \
     cryptsetup e2fsprogs dosfstools \
     efibootmgr \
     pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber \
-    brave firefox \
-    htop neofetch fastfetch \
+    firefox \
+    htop fastfetch \
     p7zip unzip zip \
     guvcview v4l-utils obs-studio \
     2>&1 | tail -5
@@ -325,9 +325,8 @@ mkinitcpio -P 2>&1 | tail -3
 
 echo "  >> Installing KDE Plasma (patience required)..."
 pacman -S --noconfirm --needed \
-    plasma \
-    plasma-wayland-session \
-    kde-applications \
+    plasma-meta \
+    kde-applications-meta \
     sddm \
     2>&1 | tail -5
 
@@ -418,6 +417,21 @@ else
     echo "  [!!] Script not found. Will run manually later."
 fi
 
+# 3b. Install Brave from AUR
+echo -e "\n${BOLD}Step 3b: Installing Brave from AUR...${NC}"
+if command -v brave >/dev/null 2>&1 || command -v brave-browser >/dev/null 2>&1; then
+    echo "  [OK] Brave already installed"
+else
+    temp_dir=$(mktemp -d)
+    git clone https://aur.archlinux.org/brave-bin.git "$temp_dir/brave-bin"
+    (
+        cd "$temp_dir/brave-bin"
+        makepkg -si --noconfirm
+    )
+    rm -rf "$temp_dir"
+    echo "  [OK] Brave installed from AUR"
+fi
+
 # 4. Setup KDE privacy
 echo -e "\n${BOLD}Step 4: Hardening KDE privacy...${NC}"
 if [[ -f ~/Projects/utility-scripts/scripts/harden_kde_lockscreen_privacy.sh ]]; then
@@ -455,7 +469,8 @@ echo "   - LUKS2 full disk encryption"
 echo "   - systemd-boot"
 echo "   - PipeWire audio"
 echo "   - NetworkManager"
-echo "   - Brave + Firefox browsers"
+echo "   - Firefox installed in base system"
+echo "   - Brave installed later from AUR via post-install script"
 echo "   - Webcam support (guvcview, obs-studio)"
 echo "   - Privacy stack ready (AdGuard DNS + uBlock + Ghostery)"
 echo ""
