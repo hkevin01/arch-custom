@@ -368,6 +368,11 @@ echo "  >> Configuring mkinitcpio for encryption..."
 sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard keymap block encrypt filesystems fsck)/' /etc/mkinitcpio.conf
 mkinitcpio -P
 
+echo "  >> Enforcing linux-zen-only kernel set..."
+pacman -S --noconfirm --needed linux-zen linux-zen-headers
+pacman -Rns --noconfirm linux linux-headers 2>/dev/null || true
+pacman -Rns --noconfirm linux-lts linux-lts-headers 2>/dev/null || true
+
 echo "  >> Installing KDE Plasma (patience required)..."
 pacman -S --noconfirm --needed \
     plasma-meta \
@@ -413,6 +418,8 @@ initrd  /amd-ucode.img
 initrd  /initramfs-linux-zen-fallback.img
 options cryptdevice=UUID=${LUKS_UUID}:cryptroot root=/dev/mapper/cryptroot rw
 ENTRYFB
+
+find /boot/loader/entries -maxdepth 1 -type f \( -name '*linux.conf' -o -name '*lts.conf' \) -delete 2>/dev/null || true
 
 echo ""
 echo "  [OK] Boot entries written for linux-zen"
