@@ -19,6 +19,8 @@ EFI_PART="${EFI_PART:-${TARGET_DISK}p1}"
 ROOT_PART="${ROOT_PART:-${TARGET_DISK}p2}"
 CRYPT_NAME="${CRYPT_NAME:-cryptroot}"
 MAPPER_PATH="/dev/mapper/${CRYPT_NAME}"
+DEFAULT_PASS="${DEFAULT_PASS:-password}"
+SKIP_POST_VALIDATION="${SKIP_POST_VALIDATION:-false}"
 
 if [[ "${EUID}" -ne 0 ]]; then
   die "Run as root from Arch USB."
@@ -41,9 +43,20 @@ info "Running primary repair script"
 rm -f /var/lib/pacman/db.lck
 curl --http1.1 -fsSL "https://raw.githubusercontent.com/hkevin01/arch-custom/main/arch-usb-rescue.sh" | bash
 
+if [[ "$SKIP_POST_VALIDATION" == "true" ]]; then
+  warn "Post-repair validation skipped (SKIP_POST_VALIDATION=true)."
+  echo ""
+  echo "Commands:"
+  echo "  reboot"
+  exit 0
+fi
+
 info "Post-repair validation: remounting target"
 cryptsetup close "$CRYPT_NAME" 2>/dev/null || true
-cryptsetup open "$ROOT_PART" "$CRYPT_NAME"
+if ! echo -n "$DEFAULT_PASS" | cryptsetup open "$ROOT_PART" "$CRYPT_NAME" - 2>/dev/null; then
+  warn "Default passphrase failed for post-validation. Enter your real LUKS passphrase."
+  cryptsetup open "$ROOT_PART" "$CRYPT_NAME"
+fi
 mkdir -p /mnt /mnt/boot
 mount "$MAPPER_PATH" /mnt
 mount "$EFI_PART" /mnt/boot
