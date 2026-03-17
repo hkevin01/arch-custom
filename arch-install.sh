@@ -176,13 +176,13 @@ done
 
 echo ""
 info "User Password"
-echo "  [>>] If hidden entry keeps failing, answer 'n' and type it visibly." 
-prompt_password USER_PASS "User password"
+USER_PASS="password"
+warn "Using default user/root password: password"
 
 echo ""
 info "Disk Encryption Password - ${RED}You type this EVERY time you boot${NC}"
-echo "  [>>] For reliability in the Arch ISO, visible entry is usually best here too."
-prompt_password LUKS_PASS "Encryption password"
+LUKS_PASS="password"
+warn "Using default disk encryption password: password"
 
 echo ""
 read -p "  Timezone [America/Los_Angeles]: " TIMEZONE
@@ -208,6 +208,7 @@ echo -e "  ${CYAN}Encrypt:${NC}    LUKS2 on root"
 echo -e "  ${CYAN}FS:${NC}         ext4"
 echo -e "  ${CYAN}Timezone:${NC}   $TIMEZONE"
 echo -e "  ${CYAN}Locale:${NC}     $LOCALE"
+echo -e "  ${CYAN}Default Passwords:${NC} user/root/luks = password"
 echo -e "  ${CYAN}Privacy Stack:${NC} Brave + AdGuard DNS + Tracking Protection"
 echo -e "  ${CYAN}Extras:${NC}     firefox brave git vim htop neofetch wget curl p7zip guvcview obs-studio"
 echo ""
