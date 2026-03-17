@@ -31,6 +31,9 @@ echo ""
 
 [[ -d /sys/firmware/efi ]] || die "UEFI not detected. Reboot USB in UEFI mode."
 
+# Keep clock sane to avoid TLS/signature issues while syncing package databases.
+timedatectl set-ntp true >/dev/null 2>&1 || true
+
 if ! ping -c1 -W3 archlinux.org >/dev/null 2>&1; then
   warn "No internet detected. Connect first, then re-run."
   echo "Quick Wi-Fi from Arch ISO:"
@@ -71,6 +74,12 @@ mount_target() {
   mkdir -p /mnt /mnt/boot
   mount "${MAPPER_PATH}" /mnt
   mount "${EFI_PART}" /mnt/boot
+
+  # Ensure chroot has working DNS for pacman sync.
+  if [[ -f /etc/resolv.conf ]]; then
+    cp -f /etc/resolv.conf /mnt/etc/resolv.conf || true
+  fi
+
   ok "Mounted ${MAPPER_PATH} -> /mnt and ${EFI_PART} -> /mnt/boot"
 }
 
@@ -81,6 +90,8 @@ chroot_repair() {
 set -euo pipefail
 
 log() { echo "[chroot] $*"; }
+
+ENFORCE_ZEN_ONLY="${ENFORCE_ZEN_ONLY:-true}"
 
   wait_for_pacman_lock() {
     local lock_file="/var/lib/pacman/db.lck"
@@ -115,8 +126,20 @@ log() { echo "[chroot] $*"; }
     return 1
   }
 
-log "Refreshing package database"
-  pacman_safe -Sy --noconfirm
+  refresh_databases() {
+    log "Refreshing package databases and keyring"
+
+    # First attempt: refresh keyring and force full database refresh.
+    if pacman_safe -Syy --noconfirm archlinux-keyring; then
+      return 0
+    fi
+
+    log "First sync attempt failed, retrying once after clearing lock"
+    rm -f /var/lib/pacman/db.lck
+    pacman_safe -Syy --noconfirm archlinux-keyring
+  }
+
+refresh_databases
 
 log "Installing core repair and Wi-Fi packages"
   pacman_safe -S --noconfirm --needed \
@@ -124,7 +147,20 @@ log "Installing core repair and Wi-Fi packages"
   linux-firmware linux-firmware-realtek \
   base-devel git dkms efibootmgr
 
-for k in linux linux-zen linux-lts; do
+if [[ "$ENFORCE_ZEN_ONLY" == "true" ]]; then
+  log "Enforcing linux-zen-only kernel setup"
+  pacman_safe -S --noconfirm --needed linux-zen linux-zen-headers
+
+  if pacman -Q linux >/dev/null 2>&1; then
+    pacman -Rns --noconfirm linux linux-headers || true
+  fi
+
+  if pacman -Q linux-lts >/dev/null 2>&1; then
+    pacman -Rns --noconfirm linux-lts linux-lts-headers || true
+  fi
+fi
+
+for k in linux-zen; do
   if pacman -Q "$k" >/dev/null 2>&1; then
       pacman_safe -S --noconfirm --needed "${k}-headers"
   fi
@@ -142,6 +178,11 @@ if grep -q '^HOOKS=' /etc/mkinitcpio.conf; then
   sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard keymap block encrypt filesystems fsck)/' /etc/mkinitcpio.conf
 fi
 mkinitcpio -P
+
+if [[ "$ENFORCE_ZEN_ONLY" == "true" && -d /boot/loader/entries ]]; then
+  log "Cleaning non-zen systemd-boot entries"
+  find /boot/loader/entries -maxdepth 1 -type f \( -name '*linux.conf' -o -name '*lts.conf' \) -delete || true
+fi
 
 if [[ -d /sys/firmware/efi/efivars ]]; then
   mount -t efivarfs efivarfs /sys/firmware/efi/efivars 2>/dev/null || true
