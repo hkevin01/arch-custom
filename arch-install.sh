@@ -295,6 +295,7 @@ success "/boot mounted from $EFI_PART"
 # --- BASE INSTALL ---
 header "BASE SYSTEM INSTALL (pacstrap)"
 info "Installing base packages - this takes a few minutes..."
+info "Live pacstrap output follows. This can take a while on slow mirrors or eMMC storage."
 
 LUKS_UUID=$(blkid -s UUID -o value "$ROOT_PART")
 info "LUKS partition UUID: $LUKS_UUID"
@@ -311,8 +312,7 @@ pacstrap -K /mnt \
     firefox \
     htop fastfetch \
     p7zip unzip zip \
-    guvcview v4l-utils obs-studio \
-    2>&1 | tail -5
+    guvcview v4l-utils obs-studio
 
 success "Base system installed to /mnt"
 
@@ -342,14 +342,13 @@ printf '127.0.0.1\tlocalhost\n::1\t\tlocalhost\n127.0.1.1\t${HOSTNAME}.localdoma
 
 echo "  >> Configuring mkinitcpio for encryption..."
 sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard keymap consolefont block encrypt filesystems fsck)/' /etc/mkinitcpio.conf
-mkinitcpio -P 2>&1 | tail -3
+mkinitcpio -P
 
 echo "  >> Installing KDE Plasma (patience required)..."
 pacman -S --noconfirm --needed \
     plasma-meta \
     kde-applications-meta \
-    sddm \
-    2>&1 | tail -5
+    sddm
 
 echo "  >> Enabling services..."
 systemctl enable NetworkManager
