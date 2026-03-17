@@ -20,11 +20,26 @@ CRYPT_NAME="${CRYPT_NAME:-cryptroot}"
 PASS_ATTEMPTS="${PASS_ATTEMPTS:-3}"
 LUKS_PASSPHRASE="${LUKS_PASSPHRASE:-}"
 
+MAPPER_PATH="/dev/mapper/${CRYPT_NAME}"
+TARGET_MOUNTED=0
+CRYPT_OPENED=0
+
 if [[ "${EUID}" -ne 0 ]]; then
   die "Run as root from Arch USB."
 fi
 
 [[ -b "$EFI_PART" ]] || die "EFI partition not found: $EFI_PART"
+
+cleanup() {
+  if [[ "$TARGET_MOUNTED" -eq 1 ]]; then
+    umount -R /mnt >/dev/null 2>&1 || true
+  fi
+  if [[ "$CRYPT_OPENED" -eq 1 ]]; then
+    cryptsetup close "$CRYPT_NAME" >/dev/null 2>&1 || true
+  fi
+}
+
+trap cleanup EXIT
 
 detect_luks_partition() {
   if [[ -b "$ROOT_PART" ]] && blkid "$ROOT_PART" 2>/dev/null | grep -q 'TYPE="crypto_LUKS"'; then
@@ -78,20 +93,26 @@ ROOT_PART="$(detect_luks_partition || true)"
 
 info "Using LUKS root partition: $ROOT_PART"
 
+EFI_UUID="$(blkid -s UUID -o value "$EFI_PART" 2>/dev/null || true)"
+[[ -n "$EFI_UUID" ]] || die "Could not read UUID from EFI partition: $EFI_PART"
+
 info "Opening encrypted root"
 open_luks_with_retries "$ROOT_PART" || die "Unable to unlock $ROOT_PART after $PASS_ATTEMPTS attempts."
+CRYPT_OPENED=1
+[[ -b "$MAPPER_PATH" ]] || die "Expected mapper device not found: $MAPPER_PATH"
 
 info "Mounting target"
-mount /dev/mapper/$CRYPT_NAME /mnt
+mount "$MAPPER_PATH" /mnt
 mkdir -p /mnt/boot
 mount "$EFI_PART" /mnt/boot
+TARGET_MOUNTED=1
 
 if [[ -f /etc/resolv.conf ]]; then
   cp -f /etc/resolv.conf /mnt/etc/resolv.conf || true
 fi
 
 info "Applying vfat/boot repair in chroot"
-arch-chroot /mnt /bin/bash <<'CHROOTEOF'
+arch-chroot /mnt env EFI_UUID="$EFI_UUID" /bin/bash <<'CHROOTEOF'
 set -euo pipefail
 
 echo "[chroot] Reinstall linux-zen + headers"
@@ -115,9 +136,8 @@ mkdir -p /etc/modules-load.d
 echo vfat > /etc/modules-load.d/vfat.conf
 
 echo "[chroot] Fix /boot fstab entry"
-BOOT_UUID="$(blkid -s UUID -o value /dev/mmcblk0p1)"
 sed -i '\|[[:space:]]/boot[[:space:]]|d' /etc/fstab
-echo "UUID=${BOOT_UUID}  /boot  vfat  rw,nofail,x-systemd.device-timeout=10,umask=0077  0  2" >> /etc/fstab
+echo "UUID=${EFI_UUID}  /boot  vfat  rw,nofail,x-systemd.device-timeout=10,umask=0077  0  2" >> /etc/fstab
 
 echo "[chroot] Rebuild initramfs"
 mkinitcpio -P
@@ -130,8 +150,9 @@ fi
 echo "[chroot] Done"
 CHROOTEOF
 
-info "Unmounting target"
+TARGET_MOUNTED=0
 umount -R /mnt || true
+CRYPT_OPENED=0
 cryptsetup close "$CRYPT_NAME" || true
 
 ok "Repair complete. Reboot and test without USB."
