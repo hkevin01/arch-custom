@@ -41,7 +41,7 @@ fi
 
 info "Running primary repair script"
 rm -f /var/lib/pacman/db.lck
-curl --http1.1 -fsSL "https://raw.githubusercontent.com/hkevin01/arch-custom/main/arch-usb-rescue.sh" | bash
+curl --http1.1 -fsSL "https://raw.githubusercontent.com/hkevin01/arch-custom/main/arch-usb-rescue.sh" | DEFAULT_PASS="$DEFAULT_PASS" bash
 
 if [[ "$SKIP_POST_VALIDATION" == "true" ]]; then
   warn "Post-repair validation skipped (SKIP_POST_VALIDATION=true)."
@@ -54,8 +54,15 @@ fi
 info "Post-repair validation: remounting target"
 cryptsetup close "$CRYPT_NAME" 2>/dev/null || true
 if ! echo -n "$DEFAULT_PASS" | cryptsetup open "$ROOT_PART" "$CRYPT_NAME" - 2>/dev/null; then
-  warn "Default passphrase failed for post-validation. Enter your real LUKS passphrase."
-  cryptsetup open "$ROOT_PART" "$CRYPT_NAME"
+  warn "Default passphrase failed for post-validation (no key available with this passphrase)."
+  warn "Primary repair already ran; skipping remount validation to avoid false failure."
+  echo ""
+  echo "If you want to validate manually, run:"
+  echo "  cryptsetup open $ROOT_PART $CRYPT_NAME"
+  echo "  mount /dev/mapper/$CRYPT_NAME /mnt && mount $EFI_PART /mnt/boot"
+  echo ""
+  echo "Then reboot and test normal boot."
+  exit 0
 fi
 mkdir -p /mnt /mnt/boot
 mount "$MAPPER_PATH" /mnt
