@@ -18,6 +18,7 @@ EFI_PART="${EFI_PART:-${TARGET_DISK}p1}"
 ROOT_PART="${ROOT_PART:-${TARGET_DISK}p2}"
 CRYPT_NAME="${CRYPT_NAME:-cryptroot}"
 PASS_ATTEMPTS="${PASS_ATTEMPTS:-3}"
+LUKS_PASSPHRASE="${LUKS_PASSPHRASE:-}"
 
 if [[ "${EUID}" -ne 0 ]]; then
   die "Run as root from Arch USB."
@@ -41,6 +42,15 @@ open_luks_with_retries() {
   local part="$1"
   local i=1
   local passphrase
+
+  if [[ -n "$LUKS_PASSPHRASE" ]]; then
+    info "Trying provided LUKS_PASSPHRASE for $part"
+    if printf '%s' "$LUKS_PASSPHRASE" | cryptsetup open "$part" "$CRYPT_NAME" --key-file -; then
+      return 0
+    fi
+    warn "Provided LUKS_PASSPHRASE did not unlock $part"
+  fi
+
   while [[ $i -le $PASS_ATTEMPTS ]]; do
     info "Opening encrypted root ($part), attempt $i/$PASS_ATTEMPTS"
 
