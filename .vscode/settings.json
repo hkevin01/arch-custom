@@ -1,0 +1,84 @@
+{
+  // ── Copilot & Chat (documented settings only — OWASP compliant) ──────────────
+  "github.copilot.chat.enabled": true,
+  "github.copilot.chat.alternateGptPrompt.enabled": true,
+  "chat.agent.maxRequests": 100,
+  "chat.autopilot.enabled": true,
+  "chat.todoListTool.enabled": true,
+  "chat.useAgentsMdFile": true,
+  "chat.useAgentSkills": true,
+
+  // Terminal auto-approve for safe read-only commands only
+  "chat.tools.terminal.enableAutoApprove": true,
+  "chat.tools.terminal.autoApprove": {
+    "ls": true, "pwd": true, "cat": true, "grep": true, "rg": true,
+    "find": true, "head": true, "tail": true, "sed": true, "awk": true,
+    "wc": true, "sort": true, "uniq": true, "echo": true,
+    "git status": true, "git diff": true, "git log": true, "git branch": true,
+    "python --version": true, "node --version": true,
+    "npm list": true, "pip list": true,
+    "rm": false, "rmdir": false, "del": false, "kill": false, "eval": false
+  },
+  // SECURITY: chat.tools.global.autoApprove deliberately false (OWASP A01)
+  // Enabling it removes ALL agent security protections.
+  "chat.tools.global.autoApprove": false,
+  "security.workspace.trust.enabled": false,
+
+  // ── General ───────────────────────────────────────────────────────────────────
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.eol": "\n",
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+
+  // ── TypeScript / JavaScript ───────────────────────────────────────────────────
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "javascript.preferences.importModuleSpecifier": "non-relative",
+
+  // ── Python — snake_case functions, PascalCase classes, UPPER_SNAKE constants ──
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "python.formatting.provider": "black",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8Enabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.languageServer": "Pylance",
+
+  // ── C/C++ — Google style, PascalCase classes, snake_case functions ───────────
+  "C_Cpp.default.cppStandard": "c++20",
+  "C_Cpp.default.cStandard": "c17",
+  "C_Cpp.clang_format_style": "{ BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 100 }",
+
+  // ── Java — camelCase methods, PascalCase classes, UPPER_SNAKE constants ───────
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.format.settings.profile": "GoogleStyle",
+  "java.configuration.runtimes": [
+    { "name": "JavaSE-21", "path": "/usr/lib/jvm/java-21-openjdk" }
+  ],
+
+  // ── Terminal ──────────────────────────────────────────────────────────────────
+  "terminal.integrated.shellIntegration.enabled": true,
+  "terminal.integrated.shellIntegration.decorationsEnabled": "both",
+  "terminal.integrated.shellIntegration.history": 500,
+  "terminal.integrated.stickyScroll.enabled": true,
+  "terminal.integrated.suggest.enabled": true,
+  "terminal.integrated.suggest.quickSuggestions": true,
+  "terminal.integrated.suggest.inlineSuggestion": "auto",
+  "terminal.integrated.confirmOnExit": "never",
+  "terminal.integrated.confirmOnKill": "never",
+
+  // ── Git & Extensions ──────────────────────────────────────────────────────────
+  "git.confirmSync": false,
+  "git.autofetch": true,
+  "extensions.autoUpdate": true,
+  "extensions.autoCheckUpdates": true
+}

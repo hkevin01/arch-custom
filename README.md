@@ -10,7 +10,17 @@ Automated Arch Linux installer with Zen kernel, KDE Plasma 6, and LUKS2 full dis
 - **Bootloader:** systemd-boot (UEFI)
 - **Audio:** PipeWire
 - **Network:** NetworkManager
-- **Extras:** Firefox, git, vim, htop, neofetch, fastfetch, p7zip
+
+## Curlable Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `arch-install.sh` | Full Arch install: LUKS2, linux-zen, KDE Plasma 6 |
+| `arch-user-setup.sh` | First-login: VS Code, Brave, Beastmode, privacy tools |
+| `enable-beastmode.sh` | VS Code Beastmode agent + chatmode installer |
+| `enable-copilot-autopilot.sh` | Copilot agent settings (auto-installs jq) |
+| `kde-dark-theme-fix.sh` | GTK/QT dark-theme fix for KDE |
+| `project-bootstrap.sh` | Scaffold any project with memory-bank, CI, .vscode |
 
 ## Installation
 
@@ -20,23 +30,37 @@ Boot from Arch Linux ISO, connect to internet, then run:
 curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/arch-install.sh | bash
 ```
 
-Follow the prompts to set:
-- Hostname
-- Username and password
-- Disk encryption password
-- Timezone and locale
+## First Login Setup
 
-Type **INSTALL** when prompted to begin the automated installation.
+After rebooting into the new system:
 
-## What it does
+```bash
+curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/arch-user-setup.sh | bash
+```
 
-1.  Partitions disk (512MB EFI + rest for LUKS root)
-2.  Sets up LUKS2 encryption
-3.  Installs base system with linux-zen
-4.  Installs and configures KDE Plasma 6
-5.  Configures systemd-boot with encryption support
-6.  Creates user with sudo access
-7.  Enables NetworkManager and SDDM
+## Scaffold Any Project
+
+Run inside any project directory to add memory-bank, CI, .vscode, .github, .copilot, and docs:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/project-bootstrap.sh | bash
+```
+
+Or target a specific directory:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/project-bootstrap.sh | bash -s -- /path/to/project
+```
+
+## What the installer does
+
+1. Partitions disk (512MB EFI + rest for LUKS root)
+2. Sets up LUKS2 encryption
+3. Installs base system with linux-zen
+4. Installs and configures KDE Plasma 6
+5. Configures systemd-boot with encryption support
+6. Creates user with sudo access
+7. Enables NetworkManager and SDDM
 
 ## Requirements
 
@@ -57,4 +81,8 @@ reboot
 On first boot:
 1. Enter your LUKS encryption password
 2. Log in at SDDM with your username
-3. Enjoy KDE Plasma!
+3. Run `arch-user-setup.sh` to finish developer environment setup
+
+## License
+
+MIT
