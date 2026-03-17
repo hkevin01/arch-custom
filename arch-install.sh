@@ -323,7 +323,10 @@ pacstrap -K /mnt \
     base base-devel \
     linux-zen linux-zen-headers linux-firmware \
     intel-ucode amd-ucode \
-    networkmanager \
+    networkmanager iwd wpa_supplicant iw wireless_tools rfkill \
+    network-manager-applet nm-connection-editor plasma-nm \
+    modemmanager usb_modeswitch dnsmasq openresolv dhclient wireless-regdb \
+    ethtool traceroute mtr tcpdump bind \
     vim nano git wget curl sudo \
     cryptsetup e2fsprogs dosfstools \
     efibootmgr \
@@ -366,6 +369,14 @@ printf '127.0.0.1\tlocalhost\n::1\t\tlocalhost\n127.0.1.1\t${HOSTNAME}.localdoma
 
 echo "  >> Configuring mkinitcpio for encryption..."
 sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard keymap block encrypt filesystems fsck)/' /etc/mkinitcpio.conf
+
+# Remove Intel QAT modules from explicit MODULES list if present to avoid irrelevant firmware warnings.
+if grep -q '^MODULES=' /etc/mkinitcpio.conf; then
+    sed -i -E 's/qat_[^ )]+//g' /etc/mkinitcpio.conf
+    sed -i -E 's/[[:space:]]+/ /g' /etc/mkinitcpio.conf
+    sed -i -E 's/\( /(/g; s/ \)/)/g' /etc/mkinitcpio.conf
+fi
+
 mkinitcpio -P
 
 echo "  >> Enforcing linux-zen-only kernel set..."
@@ -381,6 +392,7 @@ pacman -S --noconfirm --needed \
 
 echo "  >> Enabling services..."
 systemctl enable NetworkManager
+systemctl enable ModemManager
 systemctl enable sddm
 systemctl enable fstrim.timer
 
@@ -424,6 +436,11 @@ find /boot/loader/entries -maxdepth 1 -type f \( -name '*linux.conf' -o -name '*
 echo ""
 echo "  [OK] Boot entries written for linux-zen"
 echo "  [OK] cryptdevice UUID = ${LUKS_UUID}"
+if [[ -f /boot/loader/random-seed ]]; then
+    chmod 600 /boot/loader/random-seed || true
+    chown root:root /boot/loader/random-seed || true
+    echo "  [OK] /boot/loader/random-seed permissions hardened"
+fi
 echo ""
 
 CHROOTEOF

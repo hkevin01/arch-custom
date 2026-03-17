@@ -178,6 +178,10 @@ refresh_databases
 log "Installing core repair and Wi-Fi packages"
   pacman_safe -S --noconfirm --needed \
   networkmanager iwd wpa_supplicant iw wireless_tools rfkill \
+  network-manager-applet nm-connection-editor plasma-nm \
+  modemmanager usb_modeswitch dnsmasq openresolv dhclient \
+  net-tools ethtool traceroute mtr nmap tcpdump bind \
+  wireless-regdb \
   linux-firmware linux-firmware-realtek \
   base-devel git dkms efibootmgr
 
@@ -211,6 +215,14 @@ log "Rebuilding initramfs"
 if grep -q '^HOOKS=' /etc/mkinitcpio.conf; then
   sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard keymap block encrypt filesystems fsck)/' /etc/mkinitcpio.conf
 fi
+
+# Remove Intel QAT modules from explicit MODULES list if present.
+if grep -q '^MODULES=' /etc/mkinitcpio.conf; then
+  sed -i -E 's/qat_[^ )]+//g' /etc/mkinitcpio.conf
+  sed -i -E 's/[[:space:]]+/ /g' /etc/mkinitcpio.conf
+  sed -i -E 's/\( /(/g; s/ \)/)/g' /etc/mkinitcpio.conf
+fi
+
 mkinitcpio -P
 
 if [[ "$ENFORCE_ZEN_ONLY" == "true" && -d /boot/loader/entries ]]; then
@@ -225,6 +237,10 @@ fi
 if [[ -d /boot/loader ]]; then
   log "Detected systemd-boot installation, repairing bootctl"
   bootctl --path=/boot install || true
+  if [[ -f /boot/loader/random-seed ]]; then
+    chmod 600 /boot/loader/random-seed || true
+    chown root:root /boot/loader/random-seed || true
+  fi
 fi
 
 if [[ -d /boot/grub || -f /etc/default/grub ]]; then
@@ -237,6 +253,7 @@ fi
 
 log "Enabling NetworkManager"
 systemctl enable NetworkManager || true
+systemctl enable ModemManager || true
 
 if lspci -nn | grep -Eqi '10ec:c821|rtl8821ce'; then
   log "RTL8821CE detected; preparing AUR helper for optional dkms driver"

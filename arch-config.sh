@@ -57,14 +57,26 @@ echo "${HOSTNAME_VALUE}" > /etc/hostname
 printf '127.0.0.1\tlocalhost\n::1\t\tlocalhost\n127.0.1.1\t${HOSTNAME_VALUE}.localdomain ${HOSTNAME_VALUE}\n' > /etc/hosts
 
 sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect microcode modconf kms keyboard keymap block encrypt filesystems fsck)/' /etc/mkinitcpio.conf
+
+if grep -q '^MODULES=' /etc/mkinitcpio.conf; then
+  sed -i -E 's/qat_[^ )]+//g' /etc/mkinitcpio.conf
+  sed -i -E 's/[[:space:]]+/ /g' /etc/mkinitcpio.conf
+  sed -i -E 's/\( /(/g; s/ \)/)/g' /etc/mkinitcpio.conf
+fi
+
 mkinitcpio -P
 
 pacman -S --noconfirm --needed linux-zen linux-zen-headers
 pacman -Rns --noconfirm linux linux-headers 2>/dev/null || true
 pacman -Rns --noconfirm linux-lts linux-lts-headers 2>/dev/null || true
 
-pacman -S --noconfirm --needed plasma-meta kde-applications-meta sddm
-systemctl enable NetworkManager sddm fstrim.timer
+pacman -S --noconfirm --needed \
+  plasma-meta kde-applications-meta sddm \
+  networkmanager iwd wpa_supplicant iw wireless_tools rfkill \
+  network-manager-applet nm-connection-editor plasma-nm \
+  modemmanager usb_modeswitch dnsmasq openresolv dhclient wireless-regdb \
+  ethtool traceroute mtr tcpdump bind
+systemctl enable NetworkManager ModemManager sddm fstrim.timer
 
 id ${USERNAME} >/dev/null 2>&1 || useradd -m -G wheel,audio,video,optical,storage -s /bin/bash ${USERNAME}
 echo "${USERNAME}:${DEFAULT_PASS}" | chpasswd
@@ -94,6 +106,11 @@ options cryptdevice=UUID=\${LUKS_UUID}:cryptroot root=/dev/mapper/cryptroot rw q
 EOF
 
 find /boot/loader/entries -maxdepth 1 -type f \( -name '*linux.conf' -o -name '*lts.conf' \) -delete 2>/dev/null || true
+
+if [[ -f /boot/loader/random-seed ]]; then
+  chmod 600 /boot/loader/random-seed || true
+  chown root:root /boot/loader/random-seed || true
+fi
 CHROOTEOF
 
 ok "Chroot recovery steps completed"
