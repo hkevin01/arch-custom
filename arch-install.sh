@@ -428,69 +428,16 @@ header "CREATING POST-INSTALL SETUP SCRIPT"
 
 cat > /mnt/home/${USERNAME}/.post-install-setup.sh << 'POSTINSTALLEOF'
 #!/bin/bash
-# Post-install setup (runs on first login)
-
 set -euo pipefail
 
-RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
+mkdir -p "${HOME}/Projects"
 
-echo -e "\n${BOLD}${CYAN}=== Arch Linux Post-Install Setup ===${NC}\n"
-
-# 1. Clone utility-scripts repo
-echo -e "${BOLD}Step 1: Cloning utility-scripts repo...${NC}"
-if ! git clone https://github.com/hkevin01/utility-scripts ~/Projects/utility-scripts 2>/dev/null; then
-    mkdir -p ~/Projects/utility-scripts
-    echo "  [!!] Could not clone. Creating empty directory."
+if [[ ! -f "${HOME}/Projects/arch-user-setup.sh" ]]; then
+  curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/arch-user-setup.sh -o "${HOME}/Projects/arch-user-setup.sh"
 fi
 
-# 2. Deploy tracking protection stack
-echo -e "\n${BOLD}Step 2: Deploying tracking protection stack...${NC}"
-if [[ -f ~/Projects/utility-scripts/scripts/deploy_tracking_protection.sh ]]; then
-    sudo bash ~/Projects/utility-scripts/scripts/deploy_tracking_protection.sh
-    echo "  [OK] Tracking protection deployed"
-else
-    echo "  [!!] Script not found yet. You can run this manually later."
-fi
-
-# 3. Add Brave privacy extensions
-echo -e "\n${BOLD}Step 3: Installing Brave privacy extensions...${NC}"
-if [[ -f ~/Projects/utility-scripts/scripts/setup_privacy_extensions.sh ]]; then
-    sudo bash ~/Projects/utility-scripts/scripts/setup_privacy_extensions.sh
-    echo "  [OK] Privacy extensions queued for install"
-else
-    echo "  [!!] Script not found. Will run manually later."
-fi
-
-# 3b. Install Brave from AUR
-echo -e "\n${BOLD}Step 3b: Installing Brave from AUR...${NC}"
-if command -v brave >/dev/null 2>&1 || command -v brave-browser >/dev/null 2>&1; then
-    echo "  [OK] Brave already installed"
-else
-    temp_dir=$(mktemp -d)
-    git clone https://aur.archlinux.org/brave-bin.git "$temp_dir/brave-bin"
-    (
-        cd "$temp_dir/brave-bin"
-        makepkg -si --noconfirm
-    )
-    rm -rf "$temp_dir"
-    echo "  [OK] Brave installed from AUR"
-fi
-
-# 4. Setup KDE privacy
-echo -e "\n${BOLD}Step 4: Hardening KDE privacy...${NC}"
-if [[ -f ~/Projects/utility-scripts/scripts/harden_kde_lockscreen_privacy.sh ]]; then
-    bash ~/Projects/utility-scripts/scripts/harden_kde_lockscreen_privacy.sh
-    echo "  [OK] KDE privacy hardened"
-fi
-
-# 5. Print next steps
-echo -e "\n${GREEN}${BOLD}=== Setup Complete ===${NC}"
-echo -e "\n${CYAN}Next steps (manual login to Brave):${NC}"
-echo "  1. Open Brave browser"
-echo "  2. Visit brave://policy to verify 34+ security settings"
-echo "  3. Visit brave://extensions/ to verify privacy extensions"
-echo "  4. Test at: https://d3ward.github.io/toolz/adblock"
-echo ""
+chmod +x "${HOME}/Projects/arch-user-setup.sh"
+exec bash "${HOME}/Projects/arch-user-setup.sh"
 
 POSTINSTALLEOF
 
