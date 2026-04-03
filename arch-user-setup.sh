@@ -97,17 +97,29 @@ fix_time_and_locale() {
 setup_beastmode() {
   info "Syncing Beastmode agent/chatmode"
 
+  # Try utility-scripts repo if it exists (may be private or renamed).
+  # The git clone is guarded with || true so a missing repo does not abort the
+  # whole script under set -euo pipefail.
   if [[ ! -d "${HOME}/Projects/utility-scripts/.git" ]]; then
-    git clone https://github.com/hkevin01/utility-scripts "${HOME}/Projects/utility-scripts"
+    git clone https://github.com/hkevin01/utility-scripts "${HOME}/Projects/utility-scripts" 2>/dev/null || true
   else
-    git -C "${HOME}/Projects/utility-scripts" pull --ff-only || true
+    git -C "${HOME}/Projects/utility-scripts" pull --ff-only 2>/dev/null || true
   fi
 
   if [[ -x "${HOME}/Projects/utility-scripts/scripts/sync_beastmode_to_user.sh" ]]; then
     bash "${HOME}/Projects/utility-scripts/scripts/sync_beastmode_to_user.sh"
-    ok "Beastmode synced"
+    ok "Beastmode synced via utility-scripts"
   else
-    warn "sync_beastmode_to_user.sh not found"
+    # Fall back to enable-beastmode.sh from this repo (canonical path)
+    local beastmode_script="${HOME}/Projects/arch-custom/enable-beastmode.sh"
+    if [[ -x "$beastmode_script" ]]; then
+      bash "$beastmode_script"
+      ok "Beastmode installed via arch-custom/enable-beastmode.sh"
+    else
+      warn "Beastmode installer not found locally; running curlable fallback"
+      curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/enable-beastmode.sh | bash
+      ok "Beastmode installed via curl fallback"
+    fi
   fi
 }
 
@@ -202,6 +214,20 @@ fi
 
 install_brave
 install_vscode_official
+
+# Apply Copilot autopilot settings immediately after VS Code is installed.
+setup_copilot_autopilot() {
+  info "Configuring VS Code Copilot autopilot settings"
+  local script="${HOME}/Projects/arch-custom/enable-copilot-autopilot.sh"
+  if [[ -x "$script" ]]; then
+    bash "$script"
+  else
+    curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/enable-copilot-autopilot.sh | bash
+  fi
+  ok "Copilot autopilot settings applied"
+}
+setup_copilot_autopilot
+
 setup_beastmode
 run_privacy_scripts
 

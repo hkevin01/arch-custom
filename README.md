@@ -616,6 +616,7 @@ All scripts are delivered over GitHub raw content and are safe to pipe directly 
 | `fix-vfat-from-usb.sh` | Recovery | Repair VFAT EFI partition from USB |
 | `fix-boot-mount-debug.sh` | Recovery | Debug boot mount failures with verbose output |
 | `fix-boot-mount-emergency.sh` | Recovery | Emergency single-command boot mount repair |
+| `scripts/diagnose-install.sh` | Diagnostics | Capture full system state to a timestamped log for debugging |
 
 <p align="right">(<a href="#top">back to top ↑</a>)</p>
 

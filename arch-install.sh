@@ -220,8 +220,8 @@ LUKS_PASS="password"
 warn "Using default disk encryption password: password"
 
 echo ""
-read -p "  Timezone [America/Los_Angeles]: " TIMEZONE
-TIMEZONE=${TIMEZONE:-America/Los_Angeles}
+read -p "  Timezone [America/New_York]: " TIMEZONE
+TIMEZONE=${TIMEZONE:-America/New_York}
 
 read -p "  Locale [en_US.UTF-8]: " LOCALE
 LOCALE=${LOCALE:-en_US.UTF-8}
@@ -326,13 +326,14 @@ pacstrap -K /mnt \
     networkmanager iwd wpa_supplicant iw wireless_tools rfkill \
     network-manager-applet nm-connection-editor plasma-nm \
     modemmanager usb_modeswitch dnsmasq openresolv dhclient wireless-regdb \
-    ethtool traceroute mtr tcpdump bind \
+    ethtool traceroute mtr nmap tcpdump bind net-tools \
     vim nano git wget curl sudo \
     cryptsetup e2fsprogs dosfstools \
     efibootmgr \
     pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber \
     htop fastfetch \
     p7zip unzip zip \
+    fwupd \
     guvcview v4l-utils obs-studio
 
 success "Base system installed to /mnt"
@@ -354,8 +355,7 @@ hwclock --systohc
 
 echo "  >> Locale..."
 if grep -Eq "^#?${LOCALE}[[:space:]]+UTF-8$" /etc/locale.gen; then
-    sed -i "s/^#\(${LOCALE}[[:space:]]\+UTF-8\)
-*/\1/" /etc/locale.gen
+    sed -i "s/^#\(${LOCALE}[[:space:]]\+UTF-8\)/\1/" /etc/locale.gen
 else
     echo "Locale ${LOCALE} is not available in /etc/locale.gen" >&2
     exit 1
