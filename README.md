@@ -40,6 +40,24 @@
 - [Curlable Scripts](#curlable-scripts)
 - [Technology Stack](#technology-stack)
 - [USB Rescue & Recovery](#usb-rescue--recovery)
+- [Troubleshooting & Known Issues](#troubleshooting--known-issues)
+  - [Stale Arch ISO Keyring](#stale-arch-iso-keyring)
+  - [Clock Drift Causes TLS/Signature Failures](#clock-drift-causes-tlssignature-failures)
+  - [Previous Partial Install — `/mnt` Busy / `cryptroot` Already Open](#previous-partial-install--mnt-busy--cryptroot-already-open)
+  - [Partition Table Not Refreshed After `sgdisk`](#partition-table-not-refreshed-after-sgdisk)
+  - [Disk Detected as Removable / Wrong Target Disk](#disk-detected-as-removable--wrong-target-disk)
+  - [Hidden Password Prompt Broken on Arch ISO Console](#hidden-password-prompt-broken-on-arch-iso-console)
+  - [LUKS Passphrase Fails When Running via `curl | bash`](#luks-passphrase-fails-when-running-via-curl--bash)
+  - [Intel QAT Firmware Warnings in mkinitcpio](#intel-qat-firmware-warnings-in-mkinitcpio)
+  - [Leftover Non-Zen Kernels Consuming Disk / Boot Entries](#leftover-non-zen-kernels-consuming-disk--boot-entries)
+  - [`/boot` Fails to Mount — Emergency Shell on Boot](#boot-fails-to-mount--emergency-shell-on-boot)
+  - [`modules_disabled=1` Prevents vfat Module from Loading](#modules_disabled1-prevents-vfat-module-from-loading)
+  - [Stale `pacman.db.lck` Blocks Chroot Repair](#stale-pacmandbclk-blocks-chroot-repair)
+  - [DNS Not Available Inside `arch-chroot`](#dns-not-available-inside-arch-chroot)
+  - [efivarfs Not Mounted in Chroot — `bootctl install` Fails](#efivarfs-not-mounted-in-chroot--bootctl-install-fails)
+  - [RTL8821CE Wi-Fi Doesn't Work After Install](#rtl8821ce-wi-fi-doesnt-work-after-install)
+  - [KDE Dark Theme Only Applies to Qt Apps — GTK Apps Stay Light](#kde-dark-theme-only-applies-to-qt-apps--gtk-apps-stay-light)
+  - [Diagnostic Commands Quick Reference](#diagnostic-commands-quick-reference)
 - [Core Capabilities](#core-capabilities)
 - [Project Roadmap](#project-roadmap)
 - [Development Status](#development-status)
@@ -691,6 +709,428 @@ curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/fix-boot-
 > Always set `DEFAULT_PASS` or `LUKS_PASSPHRASE` via environment variable — never hardcode passphrases in scripts or commit them to version control.
 
 </details>
+
+<p align="right">(<a href="#top">back to top ↑</a>)</p>
+
+---
+
+## Troubleshooting & Known Issues
+
+Real problems encountered on this specific machine during live installs. Every workaround listed here is codified in the scripts — this section explains **why**.
+
+---
+
+### Stale Arch ISO Keyring
+
+**Symptom:** `pacman -S` fails with `signature from ... is invalid` or `unknown trust` errors during `pacstrap`.
+
+**Cause:** The ISO keyring is frozen at ISO build time. After a few months the keyring is too old to verify modern packages.
+
+**Fix (automated in `arch-install.sh`):**
+```bash
+pacman -Sy archlinux-keyring
+```
+This is run as a non-fatal pre-flight step before `pacstrap`. If the network is available, the keyring is refreshed. If it fails the install continues because `pacstrap` will pull a fresh keyring anyway.
+
+---
+
+### Clock Drift Causes TLS/Signature Failures
+
+**Symptom:** `pacstrap` or `pacman -Sy` fail with certificate/signature errors even after keyring refresh. Error messages mention HTTPS or GPG signature verification.
+
+**Cause:** The Arch ISO RTC clock may be minutes or hours off when booting bare metal. TLS certificates and GPG timestamps require a roughly correct system clock.
+
+**Fix (automated in `arch-install.sh` and all rescue scripts):**
+```bash
+timedatectl set-ntp true
+```
+Called before `pacstrap` and before any `pacman` sync in the rescue environment.
+
+---
+
+### Previous Partial Install — `/mnt` Busy / `cryptroot` Already Open
+
+**Symptom:** On a second or third install attempt: `mount: /mnt: already mounted`, `Device cryptroot already exists`, or `swapon: /dev/... already active`.
+
+**Cause:** A previous failed or interrupted run left `/mnt` mounted, the LUKS mapper open, or swap active.
+
+**Fix (automated in `arch-install.sh` via `cleanup_previous_install_state()`):**
+```bash
+swapoff -a
+umount -R /mnt 2>/dev/null || true
+cryptsetup close cryptroot 2>/dev/null || true
+udevadm settle
+```
+Run this manually before retrying, or just rerun `arch-install.sh` — the cleanup function runs automatically at the start of every install.
+
+---
+
+### Partition Table Not Refreshed After `sgdisk`
+
+**Symptom:** `mkfs.fat` or `cryptsetup luksFormat` fail immediately after `sgdisk` with "device or resource busy" or "no such file or directory" for the new partition nodes.
+
+**Cause:** `sgdisk` writes the new partition table but the kernel may not see the updated partition nodes immediately.
+
+**Fix (automated in `arch-install.sh`):**
+```bash
+partprobe "$TARGET_DISK"
+sleep 2
+```
+The `sleep 2` gives udev time to settle and create the new device nodes.
+
+---
+
+### Disk Detected as Removable / Wrong Target Disk
+
+**Symptom:** The installer picks the wrong disk or fails to detect any non-removable disk.
+
+**Cause:** The install USB itself shows up as a block device. On eMMC or NVMe hardware the disk name is `mmcblk0` or `nvme0n1` rather than `sda`.
+
+**Fix (automated in `arch-install.sh`):**
+The disk detector iterates `mmcblk0 nvme0n1 sda sdb vda` and reads `/sys/block/<dev>/removable`. Only disks reporting `0` (non-removable) are considered. Override at any time:
+```bash
+TARGET_DISK=/dev/sda bash arch-install.sh
+```
+
+> [!NOTE]
+> Partition naming differs by disk type:
+> - `mmcblk0` / `nvme0n1` → partitions are `p1`, `p2` (e.g. `/dev/mmcblk0p1`)
+> - `sda` / `sdb` → partitions are `1`, `2` (e.g. `/dev/sda1`)
+
+---
+
+### Hidden Password Prompt Broken on Arch ISO Console
+
+**Symptom:** Pressing Enter after typing a passphrase appears to do nothing, or the password is accepted as empty. The prompt hangs or the install proceeds with a blank passphrase.
+
+**Cause:** `read -rs` (silent/hidden input) behaves inconsistently on some TTY configurations in the Arch ISO, especially on non-US keyboards or when accessed over a serial console. Some keyboards also inject a trailing `\r` (carriage return) that gets included in the captured password.
+
+**Fix (automated in `arch-install.sh`):**
+- Password prompts default to **visible** input.
+- Set `HIDDEN_PASS=true` to opt-in to hidden prompts if your console supports it.
+- Trailing `\r` is stripped from all captured passwords automatically.
+
+```bash
+HIDDEN_PASS=true bash arch-install.sh
+```
+
+---
+
+### LUKS Passphrase Fails When Running via `curl | bash`
+
+**Symptom:** `cryptsetup open` fails with interactive passphrase prompts when the script is piped through `bash`. The passphrase read never receives input.
+
+**Cause:** When a script runs via `curl | bash`, stdin is the pipe carrying the script itself, not the terminal. Interactive `read` commands receive EOF immediately.
+
+**Fix (automated in all rescue and repair scripts):**
+```bash
+# Scripts read from /dev/tty instead of stdin for LUKS passphrases
+read -r -s -p "Enter LUKS passphrase: " passphrase < /dev/tty
+
+# Or pass passphrase via environment variable to bypass interactive prompt
+LUKS_PASSPHRASE="yourpassphrase" bash fix-vfat-from-usb.sh
+DEFAULT_PASS="yourpassphrase" bash arch-usb-rescue.sh
+```
+
+---
+
+### Intel QAT Firmware Warnings in mkinitcpio
+
+**Symptom:** `mkinitcpio -P` prints multiple warnings like:
+```
+==> WARNING: Possibly missing firmware for module: qat_4xxx
+==> WARNING: Possibly missing firmware for module: qat_c3xxx
+```
+
+**Cause:** Intel Quick Assist Technology (QAT) modules are pulled in as MODULES= entries by `mkinitcpio` autodetect on some Intel systems. The QAT firmware blobs are not in `linux-firmware`. The warnings are cosmetic — boot succeeds — but they clutter output and cause confusion.
+
+**Fix (automated in `arch-install.sh`, `arch-config.sh`, and `arch-usb-rescue.sh`):**
+```bash
+# Remove qat_* entries from MODULES= in /etc/mkinitcpio.conf
+sed -i -E 's/qat_[^ )]+//g' /etc/mkinitcpio.conf
+sed -i -E 's/[[:space:]]+/ /g' /etc/mkinitcpio.conf
+sed -i -E 's/\( /(/g; s/ \)/)/g' /etc/mkinitcpio.conf
+mkinitcpio -P
+```
+
+---
+
+### Leftover Non-Zen Kernels Consuming Disk / Boot Entries
+
+**Symptom:** `/boot` fills up. `bootctl list` shows multiple Arch entries pointing to `vmlinuz-linux` or `vmlinuz-linux-lts` that do not match the installed `linux-zen` kernel. Old kernels may fail to boot after a `linux-zen` upgrade if headers diverge.
+
+**Fix (automated in `arch-install.sh` and `arch-usb-rescue.sh`):**
+```bash
+# Remove vanilla and LTS kernels after confirming linux-zen is installed
+pacman -Rns --noconfirm linux linux-headers 2>/dev/null || true
+pacman -Rns --noconfirm linux-lts linux-lts-headers 2>/dev/null || true
+
+# Remove stale boot entries
+find /boot/loader/entries -maxdepth 1 -type f \( -name '*linux.conf' -o -name '*lts.conf' \) -delete
+```
+
+---
+
+### `/boot` Fails to Mount — Emergency Shell on Boot
+
+**Symptom:** Boot drops to an emergency shell with errors:
+```
+[FAILED] Failed to mount /boot.
+[DEPEND] Dependency failed for Local File Systems.
+```
+`journalctl -xb` shows `boot.mount` failing with a UUID not found or FAT read error.
+
+**Common causes:**
+1. `/etc/fstab` has a stale UUID for the EFI partition (relabeled or recreated)
+2. The vfat filesystem on the EFI partition is corrupted
+3. `vfat` kernel module fails to load (see `modules_disabled` issue below)
+4. `/boot` fstab entry missing entirely
+
+**Fix — from emergency shell (automated in `fix-boot-mount-emergency.sh`):**
+```bash
+# Remount root read-write
+mount -o remount,rw /
+
+# Get the real UUID of the EFI partition
+blkid /dev/mmcblk0p1
+
+# Repair FAT filesystem
+fsck.vfat -a /dev/mmcblk0p1
+
+# Rewrite fstab /boot entry with correct UUID
+sed -i '\|[[:space:]]/boot[[:space:]]|d' /etc/fstab
+echo "UUID=<your-efi-uuid>  /boot  vfat  rw,nofail,x-systemd.device-timeout=10,umask=0077  0  2" >> /etc/fstab
+
+# Test the mount
+mount /boot
+
+# Apply
+systemctl daemon-reload
+systemctl restart local-fs.target
+reboot
+```
+
+> [!TIP]
+> The scripts use `nofail` and `x-systemd.device-timeout=10` in the fstab options. `nofail` prevents a missing `/boot` from blocking the entire boot into an emergency shell. This is intentional — the system can still boot (without kernel updates or EFI access) while you diagnose.
+
+---
+
+### `modules_disabled=1` Prevents vfat Module from Loading
+
+**Symptom:** `/boot` mount fails at boot with "unknown filesystem type vfat" even though the EFI partition is valid FAT32. The vfat and fat modules are present in the initramfs but fail to load at runtime.
+
+**Cause:** A `modules_disabled=1` line in any file under `/etc/sysctl.d/`, `/etc/sysctl.conf`, or `/usr/lib/sysctl.d/` locks the module loading subsystem after the last sysctl application — preventing any new modules from loading, including vfat.
+
+**Fix (automated in `fix-vfat-from-usb.sh`):**
+```bash
+# Comment out the offending line in all sysctl config files
+for f in /etc/sysctl.conf /etc/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf; do
+  [[ -f "$f" ]] || continue
+  sed -i -E 's/^([^#].*modules_disabled\s*=\s*1.*)$/# disabled by fix: \1/' "$f"
+done
+
+# Ensure vfat is loaded at boot via modules-load.d
+echo vfat > /etc/modules-load.d/vfat.conf
+mkinitcpio -P
+```
+
+---
+
+### Stale `pacman.db.lck` Blocks Chroot Repair
+
+**Symptom:** `pacman` inside a chroot (or on the live USB) hangs or fails with `error: failed to init transaction (unable to lock database)`.
+
+**Common causes:**
+1. A previous `pacman` run was killed mid-operation leaving `/var/lib/pacman/db.lck`
+2. Running `arch-chroot` while `pacman` is already active on the host
+
+**Fix (automated in `arch-usb-rescue.sh`):**
+```bash
+# On the live USB (before chroot)
+rm -f /var/lib/pacman/db.lck
+
+# In the target system (before chroot pacman calls)
+rm -f /mnt/var/lib/pacman/db.lck
+```
+The rescue script waits up to 90 seconds for any legitimate pacman process to finish before forcibly removing a lock.
+
+---
+
+### DNS Not Available Inside `arch-chroot`
+
+**Symptom:** `pacman -Sy` inside `arch-chroot /mnt` fails with `unable to resolve host` or `curl: Could not resolve host: mirror.rackspace.com`.
+
+**Cause:** The chroot does not inherit the host's `/etc/resolv.conf`. The installed system's `/etc/resolv.conf` may point to `127.0.0.1` (NetworkManager) which is not running in the chroot.
+
+**Fix (automated in all chroot-based scripts):**
+```bash
+cp -f /etc/resolv.conf /mnt/etc/resolv.conf
+```
+Copies the live USB's working nameserver config into the chroot before any `pacman` calls.
+
+---
+
+### efivarfs Not Mounted in Chroot — `bootctl install` Fails
+
+**Symptom:** `bootctl --path=/boot install` inside a chroot fails with:
+```
+EFI variables are not supported on this system.
+```
+or writes an entry but it is not visible to `efibootmgr`.
+
+**Cause:** `efivarfs` is a kernel filesystem that must be explicitly mounted inside the chroot. It is not auto-mounted by `arch-chroot`.
+
+**Fix (automated in all chroot scripts):**
+```bash
+mount -t efivarfs efivarfs /sys/firmware/efi/efivars 2>/dev/null || true
+bootctl --path=/boot install
+```
+
+---
+
+### RTL8821CE Wi-Fi Doesn't Work After Install
+
+**Symptom:** Wi-Fi adapter not detected or unstable — repeatedly disconnects. `ip link` may show `wlan0` but no networks are found or association fails.
+
+**Cause:** The RTL8821CE (Realtek 802.11ac, PCI ID `10ec:c821`) is not supported by the mainline `rtw88` in-tree driver included in `linux-firmware`. It requires the out-of-tree `rtl8821ce-dkms-git` driver from the AUR.
+
+**Diagnosis:**
+```bash
+lspci -nn | grep -i realtek
+# Look for: 10ec:c821 (RTL8821CE)
+
+dmesg | grep -i rtl
+# Check for rtw88 errors or firmware load failures
+```
+
+**Fix (installer exits with instructions if RTL8821CE is detected):**
+```bash
+# Install as your normal user (not root)
+/usr/local/sbin/install-rtl8821ce-aur.sh
+```
+
+If the driver installs but Wi-Fi is still unstable (random disconnects, high error rates):
+```bash
+# The rtw88 in-kernel module may conflict with the DKMS driver
+# Blacklist it:
+echo "blacklist rtw88_8821ce" | sudo tee /etc/modprobe.d/rtw88-blacklist.conf
+sudo mkinitcpio -P
+reboot
+```
+
+---
+
+### KDE Dark Theme Only Applies to Qt Apps — GTK Apps Stay Light
+
+**Symptom:** After enabling Breeze Dark in KDE System Settings, Qt apps (Konsole, Dolphin, Kate) are dark but GTK apps (Firefox, GIMP, Nautilus, most Electron apps) remain light.
+
+**Cause:** KDE's theme settings apply to Qt apps through `QT_QPA_PLATFORMTHEME=kde`. GTK apps use a separate theming stack (GTK 3.0 and GTK 4.0 settings files) and require the `kde-gtk-config` bridge package to be installed.
+
+**Fix (automated in `kde-dark-theme-fix.sh`):**
+```bash
+# Install the KDE-GTK bridge
+sudo pacman -S --needed kde-gtk-config
+
+# Set Qt platform theme globally
+echo 'QT_QPA_PLATFORMTHEME=kde' | sudo tee -a /etc/environment
+
+# Write GTK dark theme config for your user
+mkdir -p ~/.config/gtk-3.0 ~/.config/gtk-4.0
+
+cat > ~/.config/gtk-3.0/settings.ini <<'EOF'
+[Settings]
+gtk-theme-name=Breeze-Dark
+gtk-application-prefer-dark-theme=1
+EOF
+
+cat > ~/.config/gtk-4.0/settings.ini <<'EOF'
+[Settings]
+gtk-theme-name=Breeze-Dark
+gtk-application-prefer-dark-theme=1
+EOF
+```
+
+Log out and back in after applying. Then open **System Settings → Colors & Themes → Application Style** and confirm GTK theme is listed as Breeze Dark.
+
+**If System Settings itself renders incorrectly:**
+```bash
+env QT_QUICK_CONTROLS_STYLE=org.kde.desktop systemsettings
+```
+
+---
+
+### `/boot/loader/random-seed` Permission Warnings
+
+**Symptom:** `systemd-boot-update.service` logs a warning:
+```
+/boot/loader/random-seed has wrong file permissions, ignoring.
+```
+Or TPM sealing related operations fail silently.
+
+**Fix (automated in all scripts that touch `/boot`):**
+```bash
+chmod 600 /boot/loader/random-seed
+chown root:root /boot/loader/random-seed
+```
+
+---
+
+### Boot Entry Shows Both Intel and AMD Microcode — Is That Normal?
+
+**Answer: Yes.** Both `intel-ucode` and `amd-ucode` are installed and both are referenced as `initrd` lines in the boot entry:
+
+```
+initrd  /intel-ucode.img
+initrd  /amd-ucode.img
+initrd  /initramfs-linux-zen.img
+```
+
+The CPU detects which microcode image applies and applies only the correct one. Loading both is safe and makes the same USB installer and boot configuration work on any x86-64 machine without knowing the CPU brand in advance.
+
+---
+
+### Diagnostic Commands Quick Reference
+
+```bash
+# Check which disk the system is on
+lsblk -f
+blkid
+
+# Check if LUKS root is open
+ls /dev/mapper/
+
+# Check UEFI boot entries
+bootctl list
+efibootmgr -v
+
+# Check current kernel
+uname -r
+pacman -Q linux-zen
+
+# Check systemd-boot health
+bootctl status
+
+# Check mkinitcpio hooks
+grep ^HOOKS /etc/mkinitcpio.conf
+
+# Check /boot fstab entry
+grep /boot /etc/fstab
+
+# Check systemd boot mount status
+systemctl --no-pager -l status boot.mount local-fs.target
+
+# Full boot journal
+journalctl -xb --no-pager | tail -150
+
+# Wi-Fi diagnostics
+rfkill list
+ip -brief link
+iw dev
+dmesg | grep -i rtl
+
+# Pacman lock
+ls -la /var/lib/pacman/db.lck
+```
 
 <p align="right">(<a href="#top">back to top ↑</a>)</p>
 
