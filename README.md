@@ -84,17 +84,17 @@ It targets solo developers, power users, and teams who want a reproducible, opin
 
 ## Key Features
 
-| Icon | Feature | Description | Impact | Status |
+| <sub>Icon</sub> | <sub>Feature</sub> | <sub>Description</sub> | <sub>Impact</sub> | <sub>Status</sub> |
 |------|---------|-------------|--------|--------|
-| 🔒 | LUKS2 Full-Disk Encryption | Root partition encrypted at rest; passphrase prompted at boot | Data security at rest | ✅ Stable |
-| ⚡ | linux-zen Kernel | Desktop-optimised kernel with low-latency and performance patches | Snappier desktop UX | ✅ Stable |
-| 🖥️ | KDE Plasma 6 + SDDM | Full Wayland-capable desktop with automatic dark-mode configuration | Zero manual KDE setup | ✅ Stable |
-| 🔁 | Idempotent One-liners | Every script can be re-run: skips already-completed steps automatically | Safe to run twice | ✅ Stable |
-| 🤖 | Copilot Beastmode | Pre-wires VS Code Copilot agents and chatmodes for autonomous development | Instant AI dev env | ✅ Stable |
-| 🛠️ | Project Bootstrapper | Scaffolds memory-bank, CI, .vscode, .github, .copilot, and docs for any project | Consistent repo setup | ✅ Stable |
-| 🚑 | USB Rescue Suite | Reinstall bootloader, fix vfat, chroot-repair from an Arch USB stick | System recovery | ✅ Stable |
-| 🎨 | KDE Dark Theme Fix | Auto-applies GTK/QT dark-theme integration so apps are visually consistent | GTK app theming | ✅ Stable |
-| ⚙️ | systemd-boot + GRUB | Primary bootloader is systemd-boot; GRUB restore scripts included | Dual bootloader support | ✅ Stable |
+| <sub>🔒</sub> | <sub>LUKS2 Full-Disk Encryption</sub> | <sub>Root partition encrypted at rest; passphrase prompted at boot</sub> | <sub>Data security at rest</sub> | <sub>✅ Stable</sub> |
+| <sub>⚡</sub> | <sub>linux-zen Kernel</sub> | <sub>Desktop-optimised kernel with low-latency and performance patches</sub> | <sub>Snappier desktop UX</sub> | <sub>✅ Stable</sub> |
+| <sub>🖥️</sub> | <sub>KDE Plasma 6 + SDDM</sub> | <sub>Full Wayland-capable desktop with automatic dark-mode configuration</sub> | <sub>Zero manual KDE setup</sub> | <sub>✅ Stable</sub> |
+| <sub>🔁</sub> | <sub>Idempotent One-liners</sub> | <sub>Every script can be re-run: skips already-completed steps automatically</sub> | <sub>Safe to run twice</sub> | <sub>✅ Stable</sub> |
+| <sub>🤖</sub> | <sub>Copilot Beastmode</sub> | <sub>Pre-wires VS Code Copilot agents and chatmodes for autonomous development</sub> | <sub>Instant AI dev env</sub> | <sub>✅ Stable</sub> |
+| <sub>🛠️</sub> | <sub>Project Bootstrapper</sub> | <sub>Scaffolds memory-bank, CI, .vscode, .github, .copilot, and docs for any project</sub> | <sub>Consistent repo setup</sub> | <sub>✅ Stable</sub> |
+| <sub>🚑</sub> | <sub>USB Rescue Suite</sub> | <sub>Reinstall bootloader, fix vfat, chroot-repair from an Arch USB stick</sub> | <sub>System recovery</sub> | <sub>✅ Stable</sub> |
+| <sub>🎨</sub> | <sub>KDE Dark Theme Fix</sub> | <sub>Auto-applies GTK/QT dark-theme integration so apps are visually consistent</sub> | <sub>GTK app theming</sub> | <sub>✅ Stable</sub> |
+| <sub>⚙️</sub> | <sub>systemd-boot + GRUB</sub> | <sub>Primary bootloader is systemd-boot; GRUB restore scripts included</sub> | <sub>Dual bootloader support</sub> | <sub>✅ Stable</sub> |
 
 - **Privacy-first defaults**: Brave browser, tracking-protection stack, and KDE lockscreen privacy hardening deployed automatically during first-login setup.
 - **AUR-native tooling**: Installs `visual-studio-code-bin` (the official Microsoft VS Code) via AUR, with automatic fallback handling.
@@ -141,12 +141,12 @@ flowchart TD
 
 **Component responsibilities:**
 
-| Layer | Scripts | Responsibility |
+| <sub>Layer</sub> | <sub>Scripts</sub> | <sub>Responsibility</sub> |
 |-------|---------|----------------|
-| Installation | `arch-install.sh`, `arch-config.sh` | Disk partition, LUKS2, base system, KDE, bootloader |
-| Configuration | `arch-user-setup.sh`, `enable-beastmode.sh`, `enable-copilot-autopilot.sh`, `kde-dark-theme-fix.sh` | Post-login developer tools, AI tooling, theming |
-| Scaffolding | `project-bootstrap.sh` | Reproducible project structure for any repository |
-| Recovery | `arch-usb-rescue.sh`, `arch-usb-repair-all.sh`, `fix-*` | Chroot repair, bootloader reinstall, vfat fixes |
+| <sub>Installation</sub> | <sub>`arch-install.sh`, `arch-config.sh`</sub> | <sub>Disk partition, LUKS2, base system, KDE, bootloader</sub> |
+| <sub>Configuration</sub> | <sub>`arch-user-setup.sh`, `enable-beastmode.sh`, `enable-copilot-autopilot.sh`, `kde-dark-theme-fix.sh`</sub> | <sub>Post-login developer tools, AI tooling, theming</sub> |
+| <sub>Scaffolding</sub> | <sub>`project-bootstrap.sh`</sub> | <sub>Reproducible project structure for any repository</sub> |
+| <sub>Recovery</sub> | <sub>`arch-usb-rescue.sh`, `arch-usb-repair-all.sh`, `fix-*`</sub> | <sub>Chroot repair, bootloader reinstall, vfat fixes</sub> |
 
 **External integrations:** AUR (yay/makepkg), GitHub raw content CDN (curlable delivery), systemd, cryptsetup, pacman.
 
@@ -165,13 +165,13 @@ pie title Script Category Distribution
     "Utility" : 1
 ```
 
-| Category | Count | Scripts |
+| <sub>Category</sub> | <sub>Count</sub> | <sub>Scripts</sub> |
 |----------|-------|---------|
-| Installation | 2 | `arch-install.sh`, `arch-config.sh` |
-| Configuration & Dev Tools | 4 | `arch-user-setup.sh`, `enable-beastmode.sh`, `enable-copilot-autopilot.sh`, `kde-dark-theme-fix.sh` |
-| Recovery & Repair | 5 | `arch-usb-rescue.sh`, `arch-usb-repair-all.sh`, `fix-grub-from-usb.sh`, `fix-vfat-from-usb.sh`, `fix-boot-mount-debug.sh` |
-| Scaffolding | 1 | `project-bootstrap.sh` |
-| Utility | 1 | `fix-boot-mount-emergency.sh` |
+| <sub>Installation</sub> | <sub>2</sub> | <sub>`arch-install.sh`, `arch-config.sh`</sub> |
+| <sub>Configuration & Dev Tools</sub> | <sub>4</sub> | <sub>`arch-user-setup.sh`, `enable-beastmode.sh`, `enable-copilot-autopilot.sh`, `kde-dark-theme-fix.sh`</sub> |
+| <sub>Recovery & Repair</sub> | <sub>5</sub> | <sub>`arch-usb-rescue.sh`, `arch-usb-repair-all.sh`, `fix-grub-from-usb.sh`, `fix-vfat-from-usb.sh`, `fix-boot-mount-debug.sh`</sub> |
+| <sub>Scaffolding</sub> | <sub>1</sub> | <sub>`project-bootstrap.sh`</sub> |
+| <sub>Utility</sub> | <sub>1</sub> | <sub>`fix-boot-mount-emergency.sh`</sub> |
 
 <p align="right">(<a href="#top">back to top ↑</a>)</p>
 
@@ -356,18 +356,18 @@ GRUB_ENABLE_CRYPTODISK=y
 
 The installer writes these **linux-zen kernel parameters** to the boot entry. They can be tuned after install by editing `/boot/loader/entries/arch.conf` (systemd-boot) or `/etc/default/grub` (GRUB).
 
-| Parameter | Purpose | Default |
+| <sub>Parameter</sub> | <sub>Purpose</sub> | <sub>Default</sub> |
 |-----------|---------|---------|
-| `cryptdevice=UUID=...:cryptroot` | Unlock LUKS2 root at boot | Required — set by installer |
-| `root=/dev/mapper/cryptroot` | Mount decrypted root | Required |
-| `rw` | Mount root read-write | Required |
-| `quiet` | Suppress most boot messages | Enabled |
-| `splash` | Show Plymouth boot splash | Enabled |
-| `loglevel=3` | Kernel log level (errors only) | Optional |
-| `mitigations=off` | Disable CPU spectre/meltdown mitigations | Optional — improves performance on trusted hardware |
-| `nowatchdog` | Disable hardware watchdog timers | Optional — reduces latency |
-| `nmi_watchdog=0` | Disable NMI watchdog | Optional |
-| `transparent_hugepage=madvise` | Memory page policy for desktop workloads | Recommended |
+| <sub>`cryptdevice=UUID=...:cryptroot`</sub> | <sub>Unlock LUKS2 root at boot</sub> | <sub>Required — set by installer</sub> |
+| <sub>`root=/dev/mapper/cryptroot`</sub> | <sub>Mount decrypted root</sub> | <sub>Required</sub> |
+| <sub>`rw`</sub> | <sub>Mount root read-write</sub> | <sub>Required</sub> |
+| <sub>`quiet`</sub> | <sub>Suppress most boot messages</sub> | <sub>Enabled</sub> |
+| <sub>`splash`</sub> | <sub>Show Plymouth boot splash</sub> | <sub>Enabled</sub> |
+| <sub>`loglevel=3`</sub> | <sub>Kernel log level (errors only)</sub> | <sub>Optional</sub> |
+| <sub>`mitigations=off`</sub> | <sub>Disable CPU spectre/meltdown mitigations</sub> | <sub>Optional — improves performance on trusted hardware</sub> |
+| <sub>`nowatchdog`</sub> | <sub>Disable hardware watchdog timers</sub> | <sub>Optional — reduces latency</sub> |
+| <sub>`nmi_watchdog=0`</sub> | <sub>Disable NMI watchdog</sub> | <sub>Optional</sub> |
+| <sub>`transparent_hugepage=madvise`</sub> | <sub>Memory page policy for desktop workloads</sub> | <sub>Recommended</sub> |
 
 **Performance-tuned kernel params for linux-zen desktop (append to options line):**
 
@@ -391,12 +391,12 @@ HOOKS=(base udev autodetect microcode modconf kms keyboard keymap consolefont bl
 
 Key hooks explained:
 
-| Hook | Role |
+| <sub>Hook</sub> | <sub>Role</sub> |
 |------|------|
-| `keyboard` | Ensures keyboard is available for passphrase entry |
-| `keymap` | Loads the correct keymap before passphrase prompt |
-| `encrypt` | Unlocks LUKS2 device before root is mounted |
-| `filesystems` | Mounts all filesystems after decryption |
+| <sub>`keyboard`</sub> | <sub>Ensures keyboard is available for passphrase entry</sub> |
+| <sub>`keymap`</sub> | <sub>Loads the correct keymap before passphrase prompt</sub> |
+| <sub>`encrypt`</sub> | <sub>Unlocks LUKS2 device before root is mounted</sub> |
+| <sub>`filesystems`</sub> | <sub>Mounts all filesystems after decryption</sub> |
 
 **Regenerate initramfs after any hook or kernel change:**
 
@@ -601,22 +601,22 @@ cd paru-bin && makepkg -si --noconfirm
 
 All scripts are delivered over GitHub raw content and are safe to pipe directly into bash from any Arch environment.
 
-| Script | Category | Purpose |
+| <sub>Script</sub> | <sub>Category</sub> | <sub>Purpose</sub> |
 |--------|----------|---------|
-| `arch-install.sh` | Installation | Full Arch install: LUKS2, linux-zen, KDE Plasma 6, systemd-boot |
-| `arch-config.sh` | Installation | Post-install system configuration and hardening |
-| `arch-user-setup.sh` | Configuration | First-login: VS Code, Brave, Beastmode, privacy tools |
-| `enable-beastmode.sh` | Configuration | VS Code Beastmode agent + chatmode installer |
-| `enable-copilot-autopilot.sh` | Configuration | Copilot agent settings (auto-installs jq) |
-| `kde-dark-theme-fix.sh` | Configuration | GTK/QT dark-theme fix for KDE |
-| `project-bootstrap.sh` | Scaffolding | Scaffold any project with memory-bank, CI, .vscode |
-| `arch-usb-rescue.sh` | Recovery | Chroot into LUKS install from USB: Wi-Fi + boot repair |
-| `arch-usb-repair-all.sh` | Recovery | Full repair sweep from USB rescue environment |
-| `fix-grub-from-usb.sh` | Recovery | Reinstall GRUB EFI bootloader from Arch USB |
-| `fix-vfat-from-usb.sh` | Recovery | Repair VFAT EFI partition from USB |
-| `fix-boot-mount-debug.sh` | Recovery | Debug boot mount failures with verbose output |
-| `fix-boot-mount-emergency.sh` | Recovery | Emergency single-command boot mount repair |
-| `scripts/diagnose-install.sh` | Diagnostics | Capture full system state to a timestamped log for debugging |
+| <sub>`arch-install.sh`</sub> | <sub>Installation</sub> | <sub>Full Arch install: LUKS2, linux-zen, KDE Plasma 6, systemd-boot</sub> |
+| <sub>`arch-config.sh`</sub> | <sub>Installation</sub> | <sub>Post-install system configuration and hardening</sub> |
+| <sub>`arch-user-setup.sh`</sub> | <sub>Configuration</sub> | <sub>First-login: VS Code, Brave, Beastmode, privacy tools</sub> |
+| <sub>`enable-beastmode.sh`</sub> | <sub>Configuration</sub> | <sub>VS Code Beastmode agent + chatmode installer</sub> |
+| <sub>`enable-copilot-autopilot.sh`</sub> | <sub>Configuration</sub> | <sub>Copilot agent settings (auto-installs jq)</sub> |
+| <sub>`kde-dark-theme-fix.sh`</sub> | <sub>Configuration</sub> | <sub>GTK/QT dark-theme fix for KDE</sub> |
+| <sub>`project-bootstrap.sh`</sub> | <sub>Scaffolding</sub> | <sub>Scaffold any project with memory-bank, CI, .vscode</sub> |
+| <sub>`arch-usb-rescue.sh`</sub> | <sub>Recovery</sub> | <sub>Chroot into LUKS install from USB: Wi-Fi + boot repair</sub> |
+| <sub>`arch-usb-repair-all.sh`</sub> | <sub>Recovery</sub> | <sub>Full repair sweep from USB rescue environment</sub> |
+| <sub>`fix-grub-from-usb.sh`</sub> | <sub>Recovery</sub> | <sub>Reinstall GRUB EFI bootloader from Arch USB</sub> |
+| <sub>`fix-vfat-from-usb.sh`</sub> | <sub>Recovery</sub> | <sub>Repair VFAT EFI partition from USB</sub> |
+| <sub>`fix-boot-mount-debug.sh`</sub> | <sub>Recovery</sub> | <sub>Debug boot mount failures with verbose output</sub> |
+| <sub>`fix-boot-mount-emergency.sh`</sub> | <sub>Recovery</sub> | <sub>Emergency single-command boot mount repair</sub> |
+| <sub>`scripts/diagnose-install.sh`</sub> | <sub>Diagnostics</sub> | <sub>Capture full system state to a timestamped log for debugging</sub> |
 
 <p align="right">(<a href="#top">back to top ↑</a>)</p>
 
@@ -624,20 +624,20 @@ All scripts are delivered over GitHub raw content and are safe to pipe directly 
 
 ## Technology Stack
 
-| Technology | Purpose | Why Chosen | Alternatives Considered |
+| <sub>Technology</sub> | <sub>Purpose</sub> | <sub>Why Chosen</sub> | <sub>Alternatives Considered</sub> |
 |------------|---------|------------|------------------------|
-| Bash | All scripting | Universal on any Arch ISO; no runtime deps | Python (too heavy for early-boot), POSIX sh (too limited) |
-| linux-zen | Kernel | Desktop-optimised, low-latency patches baked in | linux (mainline), linux-lts (too conservative) |
-| KDE Plasma 6 | Desktop | Wayland-native, highly configurable, active upstream | GNOME (less configurable), Sway (no GUI config) |
-| LUKS2 + cryptsetup | Disk encryption | Industry standard; systemd-boot + initramfs integration | VeraCrypt (no initramfs hooks), plain dm-crypt |
-| systemd-boot | Primary bootloader | UEFI-native, zero config overhead, fast boot times | GRUB (heavier — repair scripts included as fallback) |
-| GRUB | Fallback bootloader | Repair scripts support GRUB reinstall from USB for dual-boot | systemd-boot (default) |
-| PipeWire | Audio | Drop-in PulseAudio replacement; lower latency, better Bluetooth | PulseAudio (legacy), JACK (pro-audio only) |
-| mkinitcpio | initramfs builder | Arch-native, hooks for encrypt + filesystems | dracut (less common on Arch) |
-| zram-generator | Compressed swap | In-memory swap with zstd; no disk wear | swapfile (slower), zswap (less flexible) |
-| fwupd | Firmware updates | LVFS-backed updates for UEFI, NVMe, USB controllers | Manual vendor flashing |
-| GitHub Actions | CI/CD | Free, native GitHub integration, fast shellcheck runs | GitLab CI, Circle CI |
-| ShellCheck | Linting | Catches shell pitfalls and portability issues automatically | Bash-lint (less comprehensive) |
+| <sub>Bash</sub> | <sub>All scripting</sub> | <sub>Universal on any Arch ISO; no runtime deps</sub> | <sub>Python (too heavy for early-boot), POSIX sh (too limited)</sub> |
+| <sub>linux-zen</sub> | <sub>Kernel</sub> | <sub>Desktop-optimised, low-latency patches baked in</sub> | <sub>linux (mainline), linux-lts (too conservative)</sub> |
+| <sub>KDE Plasma 6</sub> | <sub>Desktop</sub> | <sub>Wayland-native, highly configurable, active upstream</sub> | <sub>GNOME (less configurable), Sway (no GUI config)</sub> |
+| <sub>LUKS2 + cryptsetup</sub> | <sub>Disk encryption</sub> | <sub>Industry standard; systemd-boot + initramfs integration</sub> | <sub>VeraCrypt (no initramfs hooks), plain dm-crypt</sub> |
+| <sub>systemd-boot</sub> | <sub>Primary bootloader</sub> | <sub>UEFI-native, zero config overhead, fast boot times</sub> | <sub>GRUB (heavier — repair scripts included as fallback)</sub> |
+| <sub>GRUB</sub> | <sub>Fallback bootloader</sub> | <sub>Repair scripts support GRUB reinstall from USB for dual-boot</sub> | <sub>systemd-boot (default)</sub> |
+| <sub>PipeWire</sub> | <sub>Audio</sub> | <sub>Drop-in PulseAudio replacement; lower latency, better Bluetooth</sub> | <sub>PulseAudio (legacy), JACK (pro-audio only)</sub> |
+| <sub>mkinitcpio</sub> | <sub>initramfs builder</sub> | <sub>Arch-native, hooks for encrypt + filesystems</sub> | <sub>dracut (less common on Arch)</sub> |
+| <sub>zram-generator</sub> | <sub>Compressed swap</sub> | <sub>In-memory swap with zstd; no disk wear</sub> | <sub>swapfile (slower), zswap (less flexible)</sub> |
+| <sub>fwupd</sub> | <sub>Firmware updates</sub> | <sub>LVFS-backed updates for UEFI, NVMe, USB controllers</sub> | <sub>Manual vendor flashing</sub> |
+| <sub>GitHub Actions</sub> | <sub>CI/CD</sub> | <sub>Free, native GitHub integration, fast shellcheck runs</sub> | <sub>GitLab CI, Circle CI</sub> |
+| <sub>ShellCheck</sub> | <sub>Linting</sub> | <sub>Catches shell pitfalls and portability issues automatically</sub> | <sub>Bash-lint (less comprehensive)</sub> |
 
 <p align="right">(<a href="#top">back to top ↑</a>)</p>
 
@@ -696,15 +696,15 @@ curl -fsSL https://raw.githubusercontent.com/hkevin01/arch-custom/main/fix-boot-
 <details>
 <summary>📋 Recovery Script Environment Variables</summary>
 
-| Variable | Default | Description |
+| <sub>Variable</sub> | <sub>Default</sub> | <sub>Description</sub> |
 |----------|---------|-------------|
-| `TARGET_DISK` | `/dev/mmcblk0` | Target block device |
-| `EFI_PART` | `${TARGET_DISK}p1` | EFI partition |
-| `ROOT_PART` | `${TARGET_DISK}p2` | LUKS root partition |
-| `CRYPT_NAME` | `cryptroot` | dm-crypt mapper name |
-| `DEFAULT_PASS` | `password` | Fallback LUKS passphrase (override this!) |
-| `LUKS_PASSPHRASE` | _(empty)_ | Pass via env to skip interactive prompt |
-| `PASS_ATTEMPTS` | `3` | Max passphrase retry attempts |
+| <sub>`TARGET_DISK`</sub> | <sub>`/dev/mmcblk0`</sub> | <sub>Target block device</sub> |
+| <sub>`EFI_PART`</sub> | <sub>`${TARGET_DISK}p1`</sub> | <sub>EFI partition</sub> |
+| <sub>`ROOT_PART`</sub> | <sub>`${TARGET_DISK}p2`</sub> | <sub>LUKS root partition</sub> |
+| <sub>`CRYPT_NAME`</sub> | <sub>`cryptroot`</sub> | <sub>dm-crypt mapper name</sub> |
+| <sub>`DEFAULT_PASS`</sub> | <sub>`password`</sub> | <sub>Fallback LUKS passphrase (override this!)</sub> |
+| <sub>`LUKS_PASSPHRASE`</sub> | <sub>_(empty)_</sub> | <sub>Pass via env to skip interactive prompt</sub> |
+| <sub>`PASS_ATTEMPTS`</sub> | <sub>`3`</sub> | <sub>Max passphrase retry attempts</sub> |
 
 > [!WARNING]
 > Always set `DEFAULT_PASS` or `LUKS_PASSPHRASE` via environment variable — never hardcode passphrases in scripts or commit them to version control.
@@ -1225,13 +1225,13 @@ gantt
         GPU driver auto-detection    :         p5d, 2026-06-01, 2026-09-01
 ```
 
-| Phase | Goals | Target | Status |
+| <sub>Phase</sub> | <sub>Goals</sub> | <sub>Target</sub> | <sub>Status</sub> |
 |-------|-------|--------|--------|
-| Phase 1 | Disk setup, LUKS2, linux-zen, KDE, systemd-boot | Q1–Q2 2025 | ✅ Complete |
-| Phase 2 | Developer tools, Copilot Beastmode, privacy hardening | Q2 2025 | ✅ Complete |
-| Phase 3 | USB rescue suite, GRUB + systemd-boot repair, vfat fix | Q2 2025 | ✅ Complete |
-| Phase 4 | ShellCheck CI, 500-line lint cap, project scaffold | Q2 2025 | ✅ Complete |
-| Phase 5 | VM smoke tests, BTRFS, GNOME variant, GPU auto-detection | Q2–Q3 2026 | 🟡 In Progress |
+| <sub>Phase 1</sub> | <sub>Disk setup, LUKS2, linux-zen, KDE, systemd-boot</sub> | <sub>Q1–Q2 2025</sub> | <sub>✅ Complete</sub> |
+| <sub>Phase 2</sub> | <sub>Developer tools, Copilot Beastmode, privacy hardening</sub> | <sub>Q2 2025</sub> | <sub>✅ Complete</sub> |
+| <sub>Phase 3</sub> | <sub>USB rescue suite, GRUB + systemd-boot repair, vfat fix</sub> | <sub>Q2 2025</sub> | <sub>✅ Complete</sub> |
+| <sub>Phase 4</sub> | <sub>ShellCheck CI, 500-line lint cap, project scaffold</sub> | <sub>Q2 2025</sub> | <sub>✅ Complete</sub> |
+| <sub>Phase 5</sub> | <sub>VM smoke tests, BTRFS, GNOME variant, GPU auto-detection</sub> | <sub>Q2–Q3 2026</sub> | <sub>🟡 In Progress</sub> |
 
 <p align="right">(<a href="#top">back to top ↑</a>)</p>
 
@@ -1239,18 +1239,18 @@ gantt
 
 ## Development Status
 
-| Item | Value |
+| <sub>Item</sub> | <sub>Value</sub> |
 |------|-------|
-| Version | 1.x (main branch) |
-| Stability | Stable |
-| Primary Language | Bash (100%) |
-| Total Scripts | 13 |
-| ShellCheck Status | ✅ Zero warnings |
-| CI | GitHub Actions (shellcheck + lint) |
-| Line-cap Enforcement | 500 lines per script |
-| UEFI Support | ✅ Full |
-| BIOS/MBR Support | ❌ Not supported |
-| Known Limitations | Default disk is `/dev/mmcblk0`; BIOS/MBR not supported; GPU drivers require manual selection |
+| <sub>Version</sub> | <sub>1.x (main branch)</sub> |
+| <sub>Stability</sub> | <sub>Stable</sub> |
+| <sub>Primary Language</sub> | <sub>Bash (100%)</sub> |
+| <sub>Total Scripts</sub> | <sub>13</sub> |
+| <sub>ShellCheck Status</sub> | <sub>✅ Zero warnings</sub> |
+| <sub>CI</sub> | <sub>GitHub Actions (shellcheck + lint)</sub> |
+| <sub>Line-cap Enforcement</sub> | <sub>500 lines per script</sub> |
+| <sub>UEFI Support</sub> | <sub>✅ Full</sub> |
+| <sub>BIOS/MBR Support</sub> | <sub>❌ Not supported</sub> |
+| <sub>Known Limitations</sub> | <sub>Default disk is `/dev/mmcblk0`; BIOS/MBR not supported; GPU drivers require manual selection</sub> |
 
 > [!NOTE]
 > No runtime code executes on import — all scripts are plain Bash and require explicit invocation. There are no daemons, services, or background processes installed by the tooling itself.
@@ -1269,16 +1269,16 @@ gantt
 <details>
 <summary>📦 Packages Installed by arch-install.sh</summary>
 
-| Package Group | Packages |
+| <sub>Package Group</sub> | <sub>Packages</sub> |
 |---------------|---------|
-| Base system | `base`, `base-devel`, `linux-zen`, `linux-zen-headers`, `linux-firmware` |
-| Desktop | `plasma-desktop`, `sddm`, `plasma-nm`, `bluedevil`, `dolphin`, `konsole`, `kate`, `ark` |
-| Audio | `pipewire`, `pipewire-pulse`, `pipewire-alsa`, `wireplumber` |
-| Network | `networkmanager`, `iwd`, `wireless-regdb` |
-| Security | `cryptsetup`, `tpm2-tools` |
-| Boot | `efibootmgr`, `systemd-boot` (built-in to systemd) |
-| Firmware | `fwupd`, `linux-firmware` |
-| Dev tools | `git`, `curl`, `wget`, `vim`, `htop`, `fastfetch` |
+| <sub>Base system</sub> | <sub>`base`, `base-devel`, `linux-zen`, `linux-zen-headers`, `linux-firmware`</sub> |
+| <sub>Desktop</sub> | <sub>`plasma-desktop`, `sddm`, `plasma-nm`, `bluedevil`, `dolphin`, `konsole`, `kate`, `ark`</sub> |
+| <sub>Audio</sub> | <sub>`pipewire`, `pipewire-pulse`, `pipewire-alsa`, `wireplumber`</sub> |
+| <sub>Network</sub> | <sub>`networkmanager`, `iwd`, `wireless-regdb`</sub> |
+| <sub>Security</sub> | <sub>`cryptsetup`, `tpm2-tools`</sub> |
+| <sub>Boot</sub> | <sub>`efibootmgr`, `systemd-boot` (built-in to systemd)</sub> |
+| <sub>Firmware</sub> | <sub>`fwupd`, `linux-firmware`</sub> |
+| <sub>Dev tools</sub> | <sub>`git`, `curl`, `wget`, `vim`, `htop`, `fastfetch`</sub> |
 
 </details>
 
